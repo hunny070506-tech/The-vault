@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE VAULT | Movie Reviews & Curated Recommendations</title>
+  <link rel="icon" type="image/jpeg" href="logo.jpg" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vault: {
+              red: '#CD1818',
+              redHover: '#A81212',
+              cream: '#F4F3EF',
+              dark: '#0B0B0E',
+              card: '#14141A',
+              border: '#262630',
+              muted: '#9494A0'
+            }
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0B0B0E;
+      color: #F4F3EF;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .vault-gradient {
+      background: radial-gradient(circle at top right, rgba(205, 24, 24, 0.22), transparent 55%),
+                  radial-gradient(circle at bottom left, rgba(205, 24, 24, 0.1), transparent 50%);
+    }
+    .card-hover {
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-5px);
+      border-color: #CD1818;
+      box-shadow: 0 16px 36px -10px rgba(205, 24, 24, 0.28);
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0B0B0E; }
+    ::-webkit-scrollbar-thumb { background: #262630; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #CD1818; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col vault-gradient selection:bg-vault-red selection:text-white">
+
+  <!-- ================= NAVBAR ================= -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-vault-dark/85 border-b border-vault-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand / Logo -->
+      <a href="#" onclick="resetFilters()" class="flex items-center gap-3.5 group">
+        <div class="w-12 h-12 rounded-xl bg-vault-red flex items-center justify-center overflow-hidden border-2 border-vault-cream/20 shadow-lg group-hover:scale-105 transition">
+          <img src="logo.jpg" alt="The Vault Logo" class="w-full h-full object-cover"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <span class="hidden font-display font-black text-vault-cream text-xs tracking-tighter text-center leading-none">THE<br>VAULT</span>
+        </div>
+        <div>
+          <span class="font-display font-black text-2xl tracking-tight text-vault-cream">THE <span class="text-vault-red">VAULT</span></span>
+          <p class="text-[11px] uppercase tracking-widest text-vault-muted -mt-1">Cinema Reviews & Curations</p>
+        </div>
+      </a>
+
+      <!-- Search Input -->
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <input id="searchInput" type="text" placeholder="Search title, director, language, or mood..."
+                 oninput="renderMovies()"
+                 class="w-full bg-vault-card border border-vault-border focus:border-vault-red rounded-full py-2.5 pl-10 pr-4 text-sm text-vault-cream placeholder-vault-muted outline-none transition" />
+          <svg class="w-4 h-4 text-vault-muted absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Primary Mode Tabs -->
+      <div class="flex items-center gap-2">
+        <button onclick="setTypeFilter('all')" id="tab-all" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-red text-white transition">All</button>
+        <button onclick="setTypeFilter('Review')" id="tab-Review" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition">Reviews</button>
+        <button onclick="setTypeFilter('Recommendation')" id="tab-Recommendation" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition">Vault Picks</button>
+        
+        <!-- Add Review Button (Only visible when Admin is logged in) -->
+        <button id="addMovieBtn" onclick="openEditorModal()" class="hidden ml-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-vault-cream text-vault-dark hover:bg-white transition items-center gap-1.5 shadow-lg">
+          <span>+ Add Entry</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Search -->
+    <div class="px-4 pb-3 md:hidden">
+      <input id="mobileSearchInput" type="text" placeholder="Search movies, directors, moods..."
+             oninput="document.getElementById('searchInput').value = this.value; renderMovies();"
+             class="w-full bg-vault-card border border-vault-border focus:border-vault-red rounded-full py-2 px-4 text-sm text-vault-cream placeholder-vault-muted outline-none" />
+    </div>
+  </header>
+
+  <!-- ================= HERO / FEATURED BANNER ================= -->
+  <section id="heroSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 w-full"></section>
+
+  <!-- ================= MOOD & LANGUAGE FILTERS ================= -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-vault-border">
+      
+      <!-- Mood Tags -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar" id="moodFilterBar">
+        <span class="text-xs font-bold uppercase tracking-wider text-vault-muted mr-1 shrink-0">Unlock Mood:</span>
+        <button onclick="setMoodFilter('all')" data-mood="all" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-red/20 text-vault-red border border-vault-red/50">All Moods</button>
+        <button onclick="setMoodFilter('Smart Whodunit')" data-mood="Smart Whodunit" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream">🕵️ Smart Whodunit</button>
+        <button onclick="setMoodFilter('Investigative Thriller')" data-mood="Investigative Thriller" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream">🔦 Investigative Thriller</button>
+        <button onclick="setMoodFilter('High-Octane Action')" data-mood="High-Octane Action" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream">🔥 High-Octane Action</button>
+        <button onclick="setMoodFilter('Mind-Bender')" data-mood="Mind-Bender" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream">🌀 Mind-Bender</button>
+        <button onclick="setMoodFilter('Psychological Horror')" data-mood="Psychological Horror" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream">👁️ Psych Horror</button>
+        <button onclick="setMoodFilter('Comfort & Comedy')" data-mood="Comfort & Comedy" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream">🍿 Comfort & Comedy</button>
+      </div>
+
+      <!-- Language & Tier Dropdowns -->
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="langFilter" onchange="renderMovies()" class="bg-vault-card border border-vault-border rounded-lg px-3 py-1.5 text-xs font-semibold text-vault-cream outline-none focus:border-vault-red">
+          <option value="all">All Languages</option>
+          <option value="Telugu">Telugu</option>
+          <option value="Malayalam">Malayalam</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Hindi">Hindi</option>
+          <option value="English">English</option>
+          <option value="International">International</option>
+        </select>
+
+        <select id="tierFilter" onchange="renderMovies()" class="bg-vault-card border border-vault-border rounded-lg px-3 py-1.5 text-xs font-semibold text-vault-cream outline-none focus:border-vault-red">
+          <option value="all">All Vault Tiers</option>
+          <option value="Locked in The Vault">🔒 Locked in The Vault</option>
+          <option value="Certified Banger">🔥 Certified Banger</option>
+          <option value="One-Time Watch">🍿 One-Time Watch</option>
+          <option value="Skip">🚫 Skip</option>
+        </select>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= MOVIE GRID ================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    <div id="moviesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-vault-card border border-vault-border text-vault-red mb-4">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+        </svg>
+      </div>
+      <h3 class="font-display text-xl font-bold text-vault-cream">Nothing in The Vault matches that filter</h3>
+      <p class="text-sm text-vault-muted mt-1">Try resetting the search or picking a different mood tag.</p>
+      <button onclick="resetFilters()" class="mt-4 px-5 py-2 rounded-full bg-vault-red text-white text-xs font-bold hover:bg-vault-redHover transition">Reset Filters</button>
+    </div>
+  </main>
+
+  <!-- ================= REVIEW DETAIL MODAL ================= -->
+  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-vault-card border border-vault-border rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl my-8 relative">
+      <div id="detailModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN ADD/EDIT MODAL ================= -->
+  <div id="editorModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-vault-card border border-vault-border rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-vault-border mb-6">
+        <h2 id="editorTitle" class="font-display text-2xl font-extrabold text-vault-cream">Add to The Vault</h2>
+        <button onclick="closeEditorModal()" class="text-vault-muted hover:text-white text-2xl leading-none">&times;</button>
+      </div>
+
+      <form id="movieForm" onsubmit="saveMovie(event)" class="space-y-4">
+        <input type="hidden" id="editId" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Movie / Series Title *</label>
+            <input id="f_title" required type="text" placeholder="e.g., Knives Out" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Release Year *</label>
+            <input id="f_year" required type="number" placeholder="2026" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Entry Type *</label>
+            <select id="f_type" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none">
+              <option value="Review">Review</option>
+              <option value="Recommendation">Vault Pick (Recommendation)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Language *</label>
+            <select id="f_language" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none">
+              <option value="Telugu">Telugu</option>
+              <option value="Malayalam">Malayalam</option>
+              <option value="Tamil">Tamil</option>
+              <option value="Hindi">Hindi</option>
+              <option value="English">English</option>
+              <option value="International">International</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Mood Category *</label>
+            <select id="f_mood" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none">
+              <option value="Smart Whodunit">Smart Whodunit</option>
+              <option value="Investigative Thriller">Investigative Thriller</option>
+              <option value="High-Octane Action">High-Octane Action</option>
+              <option value="Mind-Bender">Mind-Bender</option>
+              <option value="Psychological Horror">Psychological Horror</option>
+              <option value="Comfort & Comedy">Comfort & Comedy</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Vault Rating (Out of 10) *</label>
+            <input id="f_rating" required type="number" step="0.1" min="0" max="10" placeholder="9.0" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Vault Tier Badge *</label>
+            <select id="f_tier" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none">
+              <option value="Locked in The Vault">🔒 Locked in The Vault</option>
+              <option value="Certified Banger">🔥 Certified Banger</option>
+              <option value="One-Time Watch">🍿 One-Time Watch</option>
+              <option value="Skip">🚫 Skip</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Where to Stream</label>
+            <input id="f_platform" type="text" placeholder="Netflix / Prime / Theatres" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Director</label>
+            <input id="f_director" type="text" placeholder="e.g., Rian Johnson" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Poster Image URL *</label>
+            <input id="f_poster" required type="url" placeholder="https://image.tmdb.org/t/p/w500/..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Screenplay / Writing Highlight</label>
+            <input id="f_screenplay" type="text" placeholder="e.g., Razor-sharp non-linear payoff" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">BGM / Soundtrack Highlight</label>
+            <input id="f_bgm" type="text" placeholder="e.g., Pulse-pounding brass theme" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-vault-muted mb-1">One-Line Verdict (Spoiler-Free Hook) *</label>
+          <input id="f_verdict" required type="text" placeholder="A masterclass in misdirection that keeps you guessing till the final frame." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Full Spoiler-Free Review *</label>
+          <textarea id="f_review" required rows="4" placeholder="Write your main thoughts on direction, pacing, performances, and why it works..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Hidden Spoiler Breakdown (Optional)</label>
+          <textarea id="f_spoilers" rows="2" placeholder="Plot twists or ending analysis (hidden behind a spoiler warning button)..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <input id="f_featured" type="checkbox" class="w-4 h-4 accent-vault-red rounded" />
+          <label for="f_featured" class="text-xs font-semibold text-vault-cream">Pin as Featured Spotlight at the top of The Vault</label>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-vault-border">
+          <button type="button" onclick="closeEditorModal()" class="px-5 py-2.5 rounded-xl bg-vault-dark border border-vault-border text-xs font-bold text-vault-muted hover:text-white">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-vault-red hover:bg-vault-redHover text-xs font-bold text-white shadow-lg transition">Publish to The Vault</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER & ADMIN BAR ================= -->
+  <footer class="border-t border-vault-border bg-vault-dark/90 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="font-display font-black text-lg text-vault-cream">THE <span class="text-vault-red">VAULT</span></span>
+        <span class="text-xs text-vault-muted">• thevault.rest • Curated Cinema Archive</span>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="dbStatusBadge" class="text-[11px] px-2.5 py-1 rounded-full bg-vault-card border border-vault-border text-vault-muted">Mode: Local Preview</span>
+        <button id="adminAuthBtn" onclick="handleAdminAuth()" class="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-vault-card border border-vault-border text-vault-muted hover:text-vault-cream hover:border-vault-red transition flex items-center gap-1.5">
+          <span>🔒 Admin Login</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= FIREBASE & APPLICATION SCRIPT ================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // =========================================================================
+    // STEP 1: PASTE YOUR FIREBASE CONFIG & ADMIN GMAIL BELOW
+    // =========================================================================
+    const ADMIN_EMAIL = "hunny070506@gmail.com"; // <-- Replace with your Gmail
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrVYg1MmbpKv3d5U3yJy6bP3i4Mgft67M",
+      authDomain: "the-vaultrest.firebaseapp.com",
+      projectId: "the-vaultrest",
+      storageBucket: "the-vaultrest.firebasestorage.app",
+      messagingSenderId: "614995204206",
+      appId: "1:614995204206:web:ea8c90fb00413b8503ae7f"
+    };
+    // =========================================================================
+
+    const isFirebaseConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("PASTE_");
+
+    // Starter Sample Entries (Used until you add your own or connect Firebase)
+    const SAMPLE_MOVIES = [
+      {
+        id: "sample-1",
+        title: "Agent Sai Srinivasa Athreya",
+        year: 2019,
+        type: "Recommendation",
+        language: "Telugu",
+        mood: "Investigative Thriller",
+        rating: 9.2,
+        tier: "Locked in The Vault",
+        platform: "Prime Video / SonyLIV",
+        director: "Swaroop RSJ",
+        poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80",
+        screenplay: "Effortless blend of Nellore humor and a layered procedural conspiracy",
+        bgm: "Mark K Robin's infectious detective brass theme",
+        verdict: "One of Indian cinema's sharpest original detective whodunits—funny, grounded, and relentlessly clever.",
+        review: "What starts as a quirky small-town detective agency comedy gradually unravels into a genuinely gripping investigative thriller. Every seemingly throwaway gag in the first act pays off as a crucial clue in the third act.",
+        spoilers: "The railway track body disposal racket and the emotional reveal involving Athreya's own mother's ashes tie the mystery together without a single loose thread.",
+        featured: true
+      },
+      {
+        id: "sample-2",
+        title: "Knives Out",
+        year: 2019,
+        type: "Review",
+        language: "English",
+        mood: "Smart Whodunit",
+        rating: 9.0,
+        tier: "Locked in The Vault",
+        platform: "Netflix / Prime Video",
+        director: "Rian Johnson",
+        poster: "https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?auto=format&fit=crop&w=600&q=80",
+        screenplay: "Subverts the classic Agatha Christie formula into a mid-movie inverted thriller",
+        bgm: "Nathan Johnson's sharp, harpsichord-driven chamber strings",
+        verdict: "A wickedly entertaining puzzle box that flips the murder mystery genre on its head.",
+        review: "By revealing the 'howdunit' in the first forty minutes and shifting the suspense onto Marta's survival, Rian Johnson keeps the audience on the edge of their seat before pulling the rug out again in the finale.",
+        spoilers: "Ransom swapping the labels on the vials—and Marta instinctively giving Harlan the right dose by reading the viscosity—is peak mystery writing.",
+        featured: false
+      },
+      {
+        id: "sample-3",
+        title: "Drishyam",
+        year: 2013,
+        type: "Recommendation",
+        language: "Malayalam",
+        mood: "Investigative Thriller",
+        rating: 9.5,
+        tier: "Locked in The Vault",
+        platform: "JioHotstar",
+        director: "Jeethu Joseph",
+        poster: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80",
+        screenplay: "Textbook alibi construction using everyday cinema tropes",
+        bgm: "Slow-building tension score during the police interrogation sequence",
+        verdict: "The gold standard of family-man survival thrillers with an unforgettable final ten minutes.",
+        review: "Georgekutty's psychological chess match against the police force proves you don't need high-speed chases to create palm-sweating tension. The screenplay earns every twist through careful first-half setup.",
+        spoilers: "Hiding the body underneath the newly constructed police station itself remains one of the greatest endings in modern thriller history.",
+        featured: false
+      }
+    ];
+
+    let movies = [];
+    let isAdmin = false;
+    let currentTypeFilter = "all";
+    let currentMoodFilter = "all";
+    let db = null;
+    let auth = null;
+
+    // Initialize either Live Firebase or Local Storage Preview Mode
+    if (isFirebaseConfigured) {
+      try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        document.getElementById("dbStatusBadge").textContent = "🟢 Live Vault Connected";
+
+        onAuthStateChanged(auth, (user) => {
+          isAdmin = !!(user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+          updateAdminUI(user);
+        });
+
+        const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+          movies = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          if (movies.length === 0) movies = [...SAMPLE_MOVIES];
+          renderMovies();
+        });
+      } catch (err) {
+        console.error("Firebase init error:", err);
+        loadLocalFallback();
+      }
+    } else {
+      loadLocalFallback();
+    }
+
+    function loadLocalFallback() {
+      const saved = localStorage.getItem("the_vault_movies");
+      movies = saved ? JSON.parse(saved) : [...SAMPLE_MOVIES];
+      isAdmin = localStorage.getItem("the_vault_demo_admin") === "true";
+      updateAdminUI(isAdmin ? { email: "Demo Admin" } : null);
+      renderMovies();
+    }
+
+    function updateAdminUI(user) {
+      const addBtn = document.getElementById("addMovieBtn");
+      const authBtn = document.getElementById("adminAuthBtn");
+      if (isAdmin) {
+        addBtn.classList.remove("hidden");
+        addBtn.classList.add("inline-flex");
+        authBtn.innerHTML = `<span>🔓 Admin Active (Sign Out)</span>`;
+      } else {
+        addBtn.classList.add("hidden");
+        addBtn.classList.remove("inline-flex");
+        authBtn.innerHTML = `<span>🔒 Admin Login</span>`;
+      }
+      renderMovies();
+    }
+
+    // Admin Auth Handler
+    window.handleAdminAuth = async function () {
+      if (!isFirebaseConfigured) {
+        isAdmin = !isAdmin;
+        localStorage.setItem("the_vault_demo_admin", isAdmin);
+        updateAdminUI(isAdmin ? { email: "Demo Admin" } : null);
+        return;
+      }
+      if (auth.currentUser) {
+        await signOut(auth);
+      } else {
+        const provider = new GoogleAuthProvider();
+        try {
+          const result = await signInWithPopup(auth, provider);
+          if (result.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+            alert("Signed in as " + result.user.email + ", which does not match ADMIN_EMAIL in index.html.");
+            await signOut(auth);
+          }
+        } catch (e) {
+          alert("Login error: " + e.message);
+        }
+      }
+    };
+
+    // Tier Badge Styling Helper
+    function getTierStyle(tier) {
+      switch (tier) {
+        case "Locked in The Vault":
+          return "bg-vault-red text-white border-vault-red";
+        case "Certified Banger":
+          return "bg-amber-500/20 text-amber-300 border-amber-500/40";
+        case "One-Time Watch":
+          return "bg-sky-500/20 text-sky-300 border-sky-500/40";
+        default:
+          return "bg-zinc-700/40 text-zinc-300 border-zinc-600";
+      }
+    }
+
+    // Render Hero + Grid
+    window.renderMovies = function () {
+      const search = (document.getElementById("searchInput").value || "").toLowerCase();
+      const lang = document.getElementById("langFilter").value;
+      const tier = document.getElementById("tierFilter").value;
+
+      // Render Featured Spotlight
+      const featured = movies.find(m => m.featured) || movies[0];
+      const heroEl = document.getElementById("heroSection");
+      if (featured && currentTypeFilter === "all" && currentMoodFilter === "all" && !search && lang === "all" && tier === "all") {
+        heroEl.classList.remove("hidden");
+        heroEl.innerHTML = `
+          <div onclick="openDetailModal('${featured.id}')" class="cursor-pointer relative rounded-3xl overflow-hidden border border-vault-border bg-vault-card grid grid-cols-1 lg:grid-cols-12 shadow-2xl group">
+            <div class="lg:col-span-5 h-64 lg:h-96 overflow-hidden relative">
+              <img src="${featured.poster}" alt="${featured.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-vault-card via-vault-card/40 to-transparent"></div>
+              <span class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-vault-red text-white shadow">Featured in The Vault</span>
+            </div>
+            <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
+              <div class="flex flex-wrap items-center gap-2 mb-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold border ${getTierStyle(featured.tier)}">${featured.tier}</span>
+                <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-cream">${featured.language}</span>
+                <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-muted">${featured.mood}</span>
+                ${featured.platform ? `<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-muted">📺 ${featured.platform}</span>` : ''}
+              </div>
+              <h1 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-vault-cream tracking-tight">${featured.title} <span class="text-vault-muted font-normal text-2xl">(${featured.year})</span></h1>
+              <p class="text-vault-cream/90 text-base sm:text-lg font-medium mt-3 line-clamp-2">"${featured.verdict}"</p>
+              <div class="mt-6 flex items-center gap-5">
+                <div class="flex items-center gap-2 bg-vault-dark border border-vault-border px-4 py-2 rounded-xl">
+                  <span class="text-vault-red font-display font-black text-2xl">${Number(featured.rating).toFixed(1)}</span>
+                  <span class="text-xs text-vault-muted uppercase font-bold">/ 10<br>Vault Score</span>
+                </div>
+                <span class="text-sm font-bold text-vault-red group-hover:translate-x-1 transition inline-flex items-center gap-1">Read Full Review &rarr;</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        heroEl.classList.add("hidden");
+      }
+
+      // Filter Movies
+      const filtered = movies.filter(m => {
+        const matchesType = currentTypeFilter === "all" || m.type === currentTypeFilter;
+        const matchesMood = currentMoodFilter === "all" || m.mood === currentMoodFilter;
+        const matchesLang = lang === "all" || m.language === lang;
+        const matchesTier = tier === "all" || m.tier === tier;
+        const matchesSearch = !search ||
+          m.title.toLowerCase().includes(search) ||
+          (m.director && m.director.toLowerCase().includes(search)) ||
+          (m.verdict && m.verdict.toLowerCase().includes(search)) ||
+          (m.language && m.language.toLowerCase().includes(search)) ||
+          (m.mood && m.mood.toLowerCase().includes(search));
+        return matchesType && matchesMood && matchesLang && matchesTier && matchesSearch;
+      });
+
+      const grid = document.getElementById("moviesGrid");
+      const empty = document.getElementById("emptyState");
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        empty.classList.remove("hidden");
+        return;
+      }
+      empty.classList.add("hidden");
+
+      grid.innerHTML = filtered.map(m => `
+        <article onclick="openDetailModal('${m.id}')" class="cursor-pointer bg-vault-card border border-vault-border rounded-2xl overflow-hidden flex flex-col card-hover">
+          <div class="relative h-72 overflow-hidden bg-vault-dark">
+            <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover" loading="lazy" />
+            <div class="absolute inset-0 bg-gradient-to-t from-vault-card via-transparent to-black/30"></div>
+            
+            <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+              <span class="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-black/75 backdrop-blur-md text-vault-cream border border-white/10">${m.language}</span>
+              <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-vault-red text-white shadow">${m.type === 'Recommendation' ? 'Vault Pick' : 'Review'}</span>
+            </div>
+
+            <div class="absolute top-3 right-3 bg-black/85 backdrop-blur-md border border-vault-red/60 rounded-xl px-2.5 py-1 flex items-center gap-1">
+              <span class="font-display font-black text-vault-cream text-sm">${Number(m.rating).toFixed(1)}</span>
+              <span class="text-[10px] text-vault-muted">/10</span>
+            </div>
+
+            <div class="absolute bottom-3 left-3 right-3">
+              <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getTierStyle(m.tier)}">${m.tier}</span>
+            </div>
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-xs text-vault-muted mb-1">
+                <span>${m.mood}</span>
+                <span>${m.year}</span>
+              </div>
+              <h3 class="font-display font-bold text-xl text-vault-cream leading-snug">${m.title}</h3>
+              <p class="text-xs text-vault-cream/80 mt-2 line-clamp-2 italic">"${m.verdict}"</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-vault-border/70 flex items-center justify-between text-xs text-vault-muted">
+              <span>${m.platform ? `📺 ${m.platform}` : `🎬 ${m.director || 'Cinema'}`}</span>
+              <span class="text-vault-red font-bold">Unlock &rarr;</span>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    };
+
+    // Filter Actions
+    window.setTypeFilter = function (type) {
+      currentTypeFilter = type;
+      ["all", "Review", "Recommendation"].forEach(t => {
+        const btn = document.getElementById("tab-" + t);
+        if (t === type) {
+          btn.className = "px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-red text-white transition";
+        } else {
+          btn.className = "px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition";
+        }
+      });
+      renderMovies();
+    };
+
+    window.setMoodFilter = function (mood) {
+      currentMoodFilter = mood;
+      document.querySelectorAll(".mood-btn").forEach(btn => {
+        if (btn.dataset.mood === mood) {
+          btn.className = "mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-red/20 text-vault-red border border-vault-red/50";
+        } else {
+          btn.className = "mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-card text-vault-muted border border-vault-border hover:text-vault-cream";
+        }
+      });
+      renderMovies();
+    };
+
+    window.resetFilters = function () {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("mobileSearchInput").value = "";
+      document.getElementById("langFilter").value = "all";
+      document.getElementById("tierFilter").value = "all";
+      setTypeFilter("all");
+      setMoodFilter("all");
+    };
+
+    // Detail Modal
+    window.openDetailModal = function (id) {
+      const m = movies.find(item => item.id === id);
+      if (!m) return;
+
+      const modal = document.getElementById("detailModal");
+      const content = document.getElementById("detailModalContent");
+
+      content.innerHTML = `
+        <div class="relative h-64 sm:h-80 bg-vault-dark">
+          <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover opacity-50" />
+          <div class="absolute inset-0 bg-gradient-to-t from-vault-card via-vault-card/60 to-transparent"></div>
+          <button onclick="closeDetailModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/70 text-vault-cream hover:bg-vault-red transition flex items-center justify-center text-xl">&times;</button>
+          
+          <div class="absolute bottom-4 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <span class="px-3 py-1 rounded-full text-xs font-bold border ${getTierStyle(m.tier)}">${m.tier}</span>
+                <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-black/70 text-vault-cream">${m.language}</span>
+                <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-black/70 text-vault-muted">${m.mood}</span>
+              </div>
+              <h2 class="font-display font-black text-2xl sm:text-4xl text-vault-cream">${m.title} <span class="text-vault-muted font-normal text-xl">(${m.year})</span></h2>
+              ${m.director ? `<p class="text-xs text-vault-muted mt-1">Directed by <strong class="text-vault-cream">${m.director}</strong> ${m.platform ? `• Streaming on <strong class="text-vault-cream">${m.platform}</strong>` : ''}</p>` : ''}
+            </div>
+            <div class="bg-vault-dark border border-vault-red px-4 py-2 rounded-2xl text-center">
+              <span class="font-display font-black text-3xl text-vault-red">${Number(m.rating).toFixed(1)}</span>
+              <span class="block text-[10px] uppercase tracking-wider text-vault-muted">Vault Score</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 sm:p-8 space-y-6">
+          <div class="p-4 rounded-xl bg-vault-dark border-l-4 border-vault-red">
+            <p class="text-xs uppercase font-bold tracking-wider text-vault-red mb-1">The Vault Verdict</p>
+            <p class="text-vault-cream font-semibold text-base sm:text-lg">"${m.verdict}"</p>
+          </div>
+
+          ${(m.screenplay || m.bgm) ? `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            ${m.screenplay ? `
+            <div class="p-4 rounded-xl bg-vault-dark border border-vault-border">
+              <span class="text-xs font-bold uppercase text-vault-muted block mb-1">✍️ Screenplay & Writing</span>
+              <p class="text-sm text-vault-cream">${m.screenplay}</p>
+            </div>` : ''}
+            ${m.bgm ? `
+            <div class="p-4 rounded-xl bg-vault-dark border border-vault-border">
+              <span class="text-xs font-bold uppercase text-vault-muted block mb-1">🎵 BGM & Soundtrack</span>
+              <p class="text-sm text-vault-cream">${m.bgm}</p>
+            </div>` : ''}
+          </div>` : ''}
+
+          <div>
+            <h4 class="font-display font-bold text-lg text-vault-cream mb-2">Review & Breakdown</h4>
+            <p class="text-sm sm:text-base text-vault-cream/90 leading-relaxed whitespace-pre-line">${m.review}</p>
+          </div>
+
+          ${m.spoilers ? `
+          <div class="border border-vault-border rounded-xl overflow-hidden">
+            <button onclick="document.getElementById('spoilerBox').classList.toggle('hidden')" class="w-full px-4 py-3 bg-vault-dark text-left flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-400 hover:bg-vault-border/40 transition">
+              <span>⚠️ Unlock Spoiler Vault (Plot Twists & Ending Discussion)</span>
+              <span>Click to Toggle</span>
+            </button>
+            <div id="spoilerBox" class="hidden p-4 bg-vault-dark/60 text-sm text-vault-cream/85 border-t border-vault-border whitespace-pre-line">${m.spoilers}</div>
+          </div>` : ''}
+
+          ${isAdmin ? `
+          <div class="pt-4 border-t border-vault-border flex items-center justify-end gap-3">
+            <button onclick="openEditorModal('${m.id}')" class="px-4 py-2 rounded-lg bg-vault-dark border border-vault-border text-xs font-bold text-vault-cream hover:border-vault-red">✏️ Edit Entry</button>
+            <button onclick="deleteMovie('${m.id}')" class="px-4 py-2 rounded-lg bg-red-950/60 border border-red-800 text-xs font-bold text-red-300 hover:bg-red-900">🗑️ Delete</button>
+          </div>` : ''}
+        </div>
+      `;
+
+      modal.classList.remove("hidden");
+    };
+
+    window.closeDetailModal = function () {
+      document.getElementById("detailModal").classList.add("hidden");
+    };
+
+    // Admin Editor Modal
+    window.openEditorModal = function (id = null) {
+      closeDetailModal();
+      const form = document.getElementById("movieForm");
+      form.reset();
+      document.getElementById("editId").value = "";
+      document.getElementById("editorTitle").textContent = id ? "Edit Vault Entry" : "Add to The Vault";
+
+      if (id) {
+        const m = movies.find(item => item.id === id);
+        if (m) {
+          document.getElementById("editId").value = m.id;
+          document.getElementById("f_title").value = m.title || "";
+          document.getElementById("f_year").value = m.year || 2026;
+          document.getElementById("f_type").value = m.type || "Review";
+          document.getElementById("f_language").value = m.language || "Telugu";
+          document.getElementById("f_mood").value = m.mood || "Investigative Thriller";
+          document.getElementById("f_rating").value = m.rating || 8.5;
+          document.getElementById("f_tier").value = m.tier || "Locked in The Vault";
+          document.getElementById("f_platform").value = m.platform || "";
+          document.getElementById("f_director").value = m.director || "";
+          document.getElementById("f_poster").value = m.poster || "";
+          document.getElementById("f_screenplay").value = m.screenplay || "";
+          document.getElementById("f_bgm").value = m.bgm || "";
+          document.getElementById("f_verdict").value = m.verdict || "";
+          document.getElementById("f_review").value = m.review || "";
+          document.getElementById("f_spoilers").value = m.spoilers || "";
+          document.getElementById("f_featured").checked = !!m.featured;
+        }
+      }
+      document.getElementById("editorModal").classList.remove("hidden");
+    };
+
+    window.closeEditorModal = function () {
+      document.getElementById("editorModal").classList.add("hidden");
+    };
+
+    // Save or Update Entry
+    window.saveMovie = async function (e) {
+      e.preventDefault();
+      const editId = document.getElementById("editId").value;
+      const payload = {
+        title: document.getElementById("f_title").value.trim(),
+        year: Number(document.getElementById("f_year").value),
+        type: document.getElementById("f_type").value,
+        language: document.getElementById("f_language").value,
+        mood: document.getElementById("f_mood").value,
+        rating: Number(document.getElementById("f_rating").value),
+        tier: document.getElementById("f_tier").value,
+        platform: document.getElementById("f_platform").value.trim(),
+        director: document.getElementById("f_director").value.trim(),
+        poster: document.getElementById("f_poster").value.trim(),
+        screenplay: document.getElementById("f_screenplay").value.trim(),
+        bgm: document.getElementById("f_bgm").value.trim(),
+        verdict: document.getElementById("f_verdict").value.trim(),
+        review: document.getElementById("f_review").value.trim(),
+        spoilers: document.getElementById("f_spoilers").value.trim(),
+        featured: document.getElementById("f_featured").checked,
+        createdAt: Date.now()
+      };
+
+      if (isFirebaseConfigured && db) {
+        try {
+          if (editId && !editId.startsWith("sample-")) {
+            await updateDoc(doc(db, "movies", editId), payload);
+          } else {
+            await addDoc(collection(db, "movies"), payload);
+          }
+        } catch (err) {
+          alert("Error saving to Firebase: " + err.message);
+          return;
+        }
+      } else {
+        if (editId) {
+          movies = movies.map(m => m.id === editId ? { ...payload, id: editId } : m);
+        } else {
+          movies.unshift({ ...payload, id: "local-" + Date.now() });
+        }
+        localStorage.setItem("the_vault_movies", JSON.stringify(movies));
+        renderMovies();
+      }
+
+      closeEditorModal();
+    };
+
+    // Delete Entry
+    window.deleteMovie = async function (id) {
+      if (!confirm("Delete this entry from The Vault?")) return;
+      if (isFirebaseConfigured && db && !id.startsWith("sample-")) {
+        await deleteDoc(doc(db, "movies", id));
+      } else {
+        movies = movies.filter(m => m.id !== id);
+        localStorage.setItem("the_vault_movies", JSON.stringify(movies));
+        renderMovies();
+      }
+      closeDetailModal();
+    };
+  </script>
+</body>
+</html>
