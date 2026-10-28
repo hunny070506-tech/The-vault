@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
   <title>THE VAULT | Movie Reviews & Curated Recommendations</title>
   <link rel="icon" type="image/jpeg" href="logo.jpg" />
 
@@ -40,14 +41,15 @@
   </script>
 
   <style>
-    body {
-      background-color: #0B0B0E;
-      color: #F4F3EF;
+    html, body {
+      background-color: #0B0B0E !important;
+      color: #F4F3EF !important;
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .vault-gradient {
-      background: radial-gradient(circle at top right, rgba(205, 24, 24, 0.22), transparent 55%),
-                  radial-gradient(circle at bottom left, rgba(205, 24, 24, 0.1), transparent 50%);
+      background-color: #0B0B0E;
+      background-image: radial-gradient(circle at top right, rgba(205, 24, 24, 0.22), transparent 55%),
+                        radial-gradient(circle at bottom left, rgba(205, 24, 24, 0.1), transparent 50%);
     }
     .card-hover {
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
@@ -57,6 +59,8 @@
       border-color: #CD1818;
       box-shadow: 0 16px 36px -10px rgba(205, 24, 24, 0.28);
     }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #0B0B0E; }
     ::-webkit-scrollbar-thumb { background: #262630; border-radius: 4px; }
@@ -66,57 +70,88 @@
 <body class="min-h-screen flex flex-col vault-gradient selection:bg-vault-red selection:text-white">
 
   <!-- ================= NAVBAR ================= -->
-  <header class="sticky top-0 z-40 backdrop-blur-xl bg-vault-dark/85 border-b border-vault-border">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-vault-dark/95 border-b border-vault-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col gap-3">
       
-      <!-- Brand / Logo -->
-      <a href="#" onclick="resetFilters()" class="flex items-center gap-3.5 group">
-        <div class="w-12 h-12 rounded-xl bg-vault-red flex items-center justify-center overflow-hidden border-2 border-vault-cream/20 shadow-lg group-hover:scale-105 transition">
-          <img src="logo.jpg" alt="The Vault Logo" class="w-full h-full object-cover"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <span class="hidden font-display font-black text-vault-cream text-xs tracking-tighter text-center leading-none">THE<br>VAULT</span>
-        </div>
-        <div>
-          <span class="font-display font-black text-2xl tracking-tight text-vault-cream">THE <span class="text-vault-red">VAULT</span></span>
-          <p class="text-[11px] uppercase tracking-widest text-vault-muted -mt-1">Cinema Reviews & Curations</p>
-        </div>
-      </a>
+      <!-- Top Row: Brand + Search + Tabs + Socials -->
+      <div class="flex items-center justify-between gap-2">
+        <!-- Brand / Logo -->
+        <a href="#" onclick="resetFilters()" class="flex items-center gap-3 shrink-0 group">
+          <div class="w-11 h-11 rounded-xl bg-vault-red flex items-center justify-center overflow-hidden border-2 border-vault-cream/20 shadow-lg shrink-0 group-hover:scale-105 transition">
+            <img src="logo.jpg" alt="The Vault Logo" class="w-full h-full object-cover"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <span class="hidden font-display font-black text-vault-cream text-[10px] tracking-tighter text-center leading-none">THE<br>VAULT</span>
+          </div>
+          <div class="leading-tight">
+            <div class="font-display font-black text-xl sm:text-2xl tracking-tight text-vault-cream">THE <span class="text-vault-red">VAULT</span></div>
+            <p class="text-[10px] uppercase tracking-widest text-vault-muted hidden sm:block">Cinema Reviews & Curations</p>
+          </div>
+        </a>
 
-      <!-- Search Input -->
-      <div class="flex-1 max-w-md hidden md:block">
-        <div class="relative">
-          <input id="searchInput" type="text" placeholder="Search title, director, language, or mood..."
-                 oninput="renderMovies()"
-                 class="w-full bg-vault-card border border-vault-border focus:border-vault-red rounded-full py-2.5 pl-10 pr-4 text-sm text-vault-cream placeholder-vault-muted outline-none transition" />
-          <svg class="w-4 h-4 text-vault-muted absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
+        <!-- Desktop Search Input -->
+        <div class="flex-1 max-w-md hidden md:block mx-4">
+          <div class="relative">
+            <input id="searchInput" type="text" placeholder="Search title, director, language, or mood..."
+                   oninput="renderMovies()"
+                   class="w-full bg-vault-card border border-vault-border focus:border-vault-red rounded-full py-2 pl-10 pr-4 text-sm text-vault-cream placeholder-vault-muted outline-none transition" />
+            <svg class="w-4 h-4 text-vault-muted absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Primary Mode Tabs & Quick Socials -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button onclick="setTypeFilter('all')" id="tab-all" class="px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold bg-vault-red text-white transition whitespace-nowrap">All</button>
+          <button onclick="setTypeFilter('Review')" id="tab-Review" class="px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition whitespace-nowrap">Reviews</button>
+          <button onclick="setTypeFilter('Recommendation')" id="tab-Recommendation" class="px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition whitespace-nowrap">Vault Picks</button>
+          
+          <!-- Desktop Social Icons -->
+          <div class="hidden lg:flex items-center gap-1.5 pl-2 ml-1 border-l border-vault-border">
+            <a href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer" title="Follow @TheVaultCertify on X"
+               class="px-2.5 py-1.5 rounded-full bg-vault-card border border-vault-border hover:border-vault-red text-vault-cream text-xs font-semibold flex items-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              <span>@TheVaultCertify</span>
+            </a>
+            <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer" title="Letterboxd Profile"
+               class="px-2.5 py-1.5 rounded-full bg-vault-card border border-vault-border hover:border-vault-red text-vault-cream text-xs font-semibold flex items-center gap-1.5 transition">
+              <span class="flex items-center -space-x-0.5">
+                <span class="w-2 h-2 rounded-full bg-[#FF8000]"></span>
+                <span class="w-2 h-2 rounded-full bg-[#00E054]"></span>
+                <span class="w-2 h-2 rounded-full bg-[#40BCF4]"></span>
+              </span>
+              <span>Letterboxd</span>
+            </a>
+          </div>
+
+          <!-- Add Review Button (Only visible when Admin is logged in) -->
+          <button id="addMovieBtn" onclick="openEditorModal()" class="hidden px-3.5 py-1.5 rounded-full text-xs font-bold bg-vault-cream text-vault-dark hover:bg-white transition items-center gap-1 shadow-lg whitespace-nowrap">
+            <span>+ Add</span>
+          </button>
         </div>
       </div>
 
-      <!-- Primary Mode Tabs -->
-      <div class="flex items-center gap-2">
-        <button onclick="setTypeFilter('all')" id="tab-all" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-red text-white transition">All</button>
-        <button onclick="setTypeFilter('Review')" id="tab-Review" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition">Reviews</button>
-        <button onclick="setTypeFilter('Recommendation')" id="tab-Recommendation" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition">Vault Picks</button>
-        
-        <!-- Add Review Button (Only visible when Admin is logged in) -->
-        <button id="addMovieBtn" onclick="openEditorModal()" class="hidden ml-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-vault-cream text-vault-dark hover:bg-white transition items-center gap-1.5 shadow-lg">
-          <span>+ Add Entry</span>
-        </button>
+      <!-- Mobile Search & Social Row -->
+      <div class="flex items-center gap-2 md:hidden">
+        <input id="mobileSearchInput" type="text" placeholder="Search movies, directors, moods..."
+               oninput="document.getElementById('searchInput').value = this.value; renderMovies();"
+               class="flex-1 bg-vault-card border border-vault-border focus:border-vault-red rounded-full py-2 px-4 text-xs text-vault-cream placeholder-vault-muted outline-none" />
+        <a href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer" aria-label="X @TheVaultCertify"
+           class="p-2 rounded-full bg-vault-card border border-vault-border text-vault-cream hover:border-vault-red shrink-0">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer" aria-label="Letterboxd"
+           class="px-2.5 py-2 rounded-full bg-vault-card border border-vault-border flex items-center -space-x-0.5 hover:border-vault-red shrink-0">
+          <span class="w-2 h-2 rounded-full bg-[#FF8000]"></span>
+          <span class="w-2 h-2 rounded-full bg-[#00E054]"></span>
+          <span class="w-2 h-2 rounded-full bg-[#40BCF4]"></span>
+        </a>
       </div>
-    </div>
-
-    <!-- Mobile Search -->
-    <div class="px-4 pb-3 md:hidden">
-      <input id="mobileSearchInput" type="text" placeholder="Search movies, directors, moods..."
-             oninput="document.getElementById('searchInput').value = this.value; renderMovies();"
-             class="w-full bg-vault-card border border-vault-border focus:border-vault-red rounded-full py-2 px-4 text-sm text-vault-cream placeholder-vault-muted outline-none" />
     </div>
   </header>
 
   <!-- ================= HERO / FEATURED BANNER ================= -->
-  <section id="heroSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 w-full"></section>
+  <section id="heroSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full"></section>
 
   <!-- ================= MOOD & LANGUAGE FILTERS ================= -->
   <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full">
@@ -176,7 +211,7 @@
   </main>
 
   <!-- ================= REVIEW DETAIL MODAL ================= -->
-  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+  <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-vault-card border border-vault-border rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl my-8 relative">
       <div id="detailModalContent"></div>
     </div>
@@ -184,7 +219,7 @@
 
   <!-- ================= ADMIN ADD/EDIT MODAL ================= -->
   <div id="editorModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-vault-card border border-vault-border rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
+    <div class="bg-vault-card border border-vault-border rounded-2xl max-w-2xl w-full p-5 sm:p-8 shadow-2xl my-8 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-4 border-b border-vault-border mb-6">
         <h2 id="editorTitle" class="font-display text-2xl font-extrabold text-vault-cream">Add to The Vault</h2>
         <button onclick="closeEditorModal()" class="text-vault-muted hover:text-white text-2xl leading-none">&times;</button>
@@ -196,12 +231,27 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Movie / Series Title *</label>
-            <input id="f_title" required type="text" placeholder="e.g., Knives Out" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+            <div class="flex gap-2">
+              <input id="f_title" required type="text" placeholder="e.g., Agent Sai Srinivasa Athreya" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
+              <button type="button" onclick="autoFetchPoster()" id="autoPosterBtn" class="shrink-0 px-3 py-2 rounded-lg bg-vault-red text-white text-xs font-bold hover:bg-vault-redHover transition">⚡ Auto-Poster</button>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Release Year *</label>
             <input id="f_year" required type="number" placeholder="2026" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
           </div>
+        </div>
+
+        <!-- Poster URL or Phone Gallery Upload -->
+        <div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold uppercase text-vault-muted">Movie Poster (Auto-Fetch, Paste URL, or Upload) *</label>
+            <label class="cursor-pointer text-xs font-bold text-vault-red hover:underline">
+              📱 Upload from Gallery
+              <input type="file" accept="image/*" class="hidden" onchange="handlePosterUpload(event)" />
+            </label>
+          </div>
+          <input id="f_poster" required type="text" placeholder="Tap '⚡ Auto-Poster' above, upload from gallery, or paste direct image URL..." class="w-full bg-vault-card border border-vault-border rounded-lg px-3.5 py-2 text-xs text-vault-cream focus:border-vault-red outline-none" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -256,18 +306,11 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Director</label>
             <input id="f_director" type="text" placeholder="e.g., Rian Johnson" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
           </div>
-          <div>
-            <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Poster Image URL *</label>
-            <input id="f_poster" required type="url" placeholder="https://image.tmdb.org/t/p/w500/..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold uppercase text-vault-muted mb-1">Screenplay / Writing Highlight</label>
             <input id="f_screenplay" type="text" placeholder="e.g., Razor-sharp non-linear payoff" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3.5 py-2.5 text-sm text-vault-cream focus:border-vault-red outline-none" />
@@ -306,16 +349,38 @@
     </div>
   </div>
 
-  <!-- ================= FOOTER & ADMIN BAR ================= -->
-  <footer class="border-t border-vault-border bg-vault-dark/90 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
+  <!-- ================= FOOTER & SOCIAL / ADMIN BAR ================= -->
+  <footer class="border-t border-vault-border bg-vault-dark/95 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      
+      <!-- Brand Info -->
+      <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
         <span class="font-display font-black text-lg text-vault-cream">THE <span class="text-vault-red">VAULT</span></span>
         <span class="text-xs text-vault-muted">• thevault.rest • Curated Cinema Archive</span>
       </div>
 
+      <!-- Social Links (X & Letterboxd) -->
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <a href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer"
+           class="px-4 py-2 rounded-xl bg-vault-card border border-vault-border hover:border-vault-red text-vault-cream text-xs font-bold flex items-center gap-2 transition shadow-sm">
+          <svg class="w-4 h-4 fill-current text-vault-cream" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          <span>@TheVaultCertify</span>
+        </a>
+
+        <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer"
+           class="px-4 py-2 rounded-xl bg-vault-card border border-vault-border hover:border-vault-red text-vault-cream text-xs font-bold flex items-center gap-2 transition shadow-sm">
+          <span class="flex items-center -space-x-0.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#FF8000]"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-[#00E054]"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-[#40BCF4]"></span>
+          </span>
+          <span>Letterboxd</span>
+        </a>
+      </div>
+
+      <!-- Admin Status & Login -->
       <div class="flex items-center gap-3">
-        <span id="dbStatusBadge" class="text-[11px] px-2.5 py-1 rounded-full bg-vault-card border border-vault-border text-vault-muted">Mode: Local Preview</span>
+        <span id="dbStatusBadge" class="text-[11px] px-2.5 py-1 rounded-full bg-vault-card border border-vault-border text-vault-muted">Mode: Connecting...</span>
         <button id="adminAuthBtn" onclick="handleAdminAuth()" class="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-vault-card border border-vault-border text-vault-muted hover:text-vault-cream hover:border-vault-red transition flex items-center gap-1.5">
           <span>🔒 Admin Login</span>
         </button>
@@ -330,9 +395,9 @@
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // =========================================================================
-    // STEP 1: PASTE YOUR FIREBASE CONFIG & ADMIN GMAIL BELOW
+    // PRE-CONFIGURED ADMIN GMAIL & FIREBASE CONFIG (the-vaultrest)
     // =========================================================================
-    const ADMIN_EMAIL = "hunny070506@gmail.com"; // <-- Replace with your Gmail
+    const ADMIN_EMAIL = "hunny070506@gmail.com";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBrVYg1MmbpKv3d5U3yJy6bP3i4Mgft67M",
@@ -346,7 +411,28 @@
 
     const isFirebaseConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("PASTE_");
 
-    // Starter Sample Entries (Used until you add your own or connect Firebase)
+    // Custom SVG Poster Fallback (Ensures a broken thumbnail icon never appears)
+    window.generateVaultFallbackPoster = function (title = "THE VAULT") {
+      const safeTitle = String(title).replace(/[<>&"']/g, "");
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1E0707"/>
+            <stop offset="50%" stop-color="#0B0B0E"/>
+            <stop offset="100%" stop-color="#2A0808"/>
+          </linearGradient>
+        </defs>
+        <rect width="600" height="900" fill="url(#g)"/>
+        <rect x="36" y="36" width="528" height="828" rx="24" fill="none" stroke="#CD1818" stroke-width="3" stroke-opacity="0.45"/>
+        <circle cx="300" cy="360" r="88" fill="#CD1818" fill-opacity="0.15" stroke="#CD1818" stroke-width="4"/>
+        <text x="300" y="375" text-anchor="middle" fill="#F4F3EF" font-family="Outfit, sans-serif" font-weight="900" font-size="34">THE VAULT</text>
+        <text x="300" y="540" text-anchor="middle" fill="#F4F3EF" font-family="Outfit, sans-serif" font-weight="800" font-size="30">${safeTitle.slice(0, 26)}</text>
+        <text x="300" y="585" text-anchor="middle" fill="#CD1818" font-family="Outfit, sans-serif" font-weight="700" font-size="17" letter-spacing="4">@THEVAULTCERTIFY</text>
+      </svg>`;
+      return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    };
+
+    // Starter Sample Entries
     const SAMPLE_MOVIES = [
       {
         id: "sample-1",
@@ -359,7 +445,7 @@
         tier: "Locked in The Vault",
         platform: "Prime Video / SonyLIV",
         director: "Swaroop RSJ",
-        poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80",
+        poster: "",
         screenplay: "Effortless blend of Nellore humor and a layered procedural conspiracy",
         bgm: "Mark K Robin's infectious detective brass theme",
         verdict: "One of Indian cinema's sharpest original detective whodunits—funny, grounded, and relentlessly clever.",
@@ -378,7 +464,7 @@
         tier: "Locked in The Vault",
         platform: "Netflix / Prime Video",
         director: "Rian Johnson",
-        poster: "https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?auto=format&fit=crop&w=600&q=80",
+        poster: "",
         screenplay: "Subverts the classic Agatha Christie formula into a mid-movie inverted thriller",
         bgm: "Nathan Johnson's sharp, harpsichord-driven chamber strings",
         verdict: "A wickedly entertaining puzzle box that flips the murder mystery genre on its head.",
@@ -397,7 +483,7 @@
         tier: "Locked in The Vault",
         platform: "JioHotstar",
         director: "Jeethu Joseph",
-        poster: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80",
+        poster: "",
         screenplay: "Textbook alibi construction using everyday cinema tropes",
         bgm: "Slow-building tension score during the police interrogation sequence",
         verdict: "The gold standard of family-man survival thrillers with an unforgettable final ten minutes.",
@@ -407,6 +493,62 @@
       }
     ];
 
+    // Fetch official movie poster via Wikipedia API automatically
+    async function fetchWikiPoster(title) {
+      try {
+        const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&prop=pageimages&piprop=original|thumbnail&pithumbsize=700&generator=search&gsrsearch=${encodeURIComponent(title + " film")}&gsrlimit=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.query && data.query.pages) {
+          const page = Object.values(data.query.pages)[0];
+          return (page.original && page.original.source) || (page.thumbnail && page.thumbnail.source) || null;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    // Auto-Poster Button in Admin Modal
+    window.autoFetchPoster = async function () {
+      const title = document.getElementById("f_title").value.trim();
+      if (!title) {
+        alert("Enter the Movie Title first, then tap ⚡ Auto-Poster!");
+        return;
+      }
+      const btn = document.getElementById("autoPosterBtn");
+      btn.textContent = "Searching...";
+      const foundUrl = await fetchWikiPoster(title);
+      if (foundUrl) {
+        document.getElementById("f_poster").value = foundUrl;
+        btn.textContent = "✓ Found!";
+      } else {
+        document.getElementById("f_poster").value = window.generateVaultFallbackPoster(title);
+        btn.textContent = "Used Vault Poster";
+      }
+      setTimeout(() => { btn.textContent = "⚡ Auto-Poster"; }, 2000);
+    };
+
+    // Upload Poster directly from Phone / iPad Gallery
+    window.handlePosterUpload = function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          const maxW = 500;
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          document.getElementById("f_poster").value = canvas.toDataURL("image/jpeg", 0.82);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
     let movies = [];
     let isAdmin = false;
     let currentTypeFilter = "all";
@@ -414,7 +556,7 @@
     let db = null;
     let auth = null;
 
-    // Initialize either Live Firebase or Local Storage Preview Mode
+    // Initialize Live Firebase or Local Fallback
     if (isFirebaseConfigured) {
       try {
         const app = initializeApp(firebaseConfig);
@@ -430,8 +572,14 @@
         const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
           movies = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          if (movies.length === 0) movies = [...SAMPLE_MOVIES];
+          if (movies.length === 0) {
+            movies = [...SAMPLE_MOVIES];
+          }
+          hydrateMissingPosters();
           renderMovies();
+        }, (err) => {
+          console.error("Firestore read error:", err);
+          loadLocalFallback();
         });
       } catch (err) {
         console.error("Firebase init error:", err);
@@ -446,7 +594,20 @@
       movies = saved ? JSON.parse(saved) : [...SAMPLE_MOVIES];
       isAdmin = localStorage.getItem("the_vault_demo_admin") === "true";
       updateAdminUI(isAdmin ? { email: "Demo Admin" } : null);
+      hydrateMissingPosters();
       renderMovies();
+    }
+
+    async function hydrateMissingPosters() {
+      let updated = false;
+      for (const m of movies) {
+        if (!m.poster || m.poster.includes("unsplash.com")) {
+          const realPoster = await fetchWikiPoster(m.title);
+          m.poster = realPoster || window.generateVaultFallbackPoster(m.title);
+          updated = true;
+        }
+      }
+      if (updated) renderMovies();
     }
 
     function updateAdminUI(user) {
@@ -512,12 +673,16 @@
       const featured = movies.find(m => m.featured) || movies[0];
       const heroEl = document.getElementById("heroSection");
       if (featured && currentTypeFilter === "all" && currentMoodFilter === "all" && !search && lang === "all" && tier === "all") {
+        const posterSrc = featured.poster || window.generateVaultFallbackPoster(featured.title);
+        const safeFeaturedTitle = String(featured.title || "").replace(/'/g, "");
         heroEl.classList.remove("hidden");
         heroEl.innerHTML = `
           <div onclick="openDetailModal('${featured.id}')" class="cursor-pointer relative rounded-3xl overflow-hidden border border-vault-border bg-vault-card grid grid-cols-1 lg:grid-cols-12 shadow-2xl group">
-            <div class="lg:col-span-5 h-64 lg:h-96 overflow-hidden relative">
-              <img src="${featured.poster}" alt="${featured.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-              <div class="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-vault-card via-vault-card/40 to-transparent"></div>
+            <div class="lg:col-span-5 h-72 lg:h-96 overflow-hidden relative bg-vault-dark">
+              <img src="${posterSrc}" alt="${featured.title}" referrerpolicy="no-referrer"
+                   onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeFeaturedTitle}');"
+                   class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-vault-card via-vault-card/35 to-transparent"></div>
               <span class="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-vault-red text-white shadow">Featured in The Vault</span>
             </div>
             <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
@@ -527,8 +692,8 @@
                 <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-muted">${featured.mood}</span>
                 ${featured.platform ? `<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-muted">📺 ${featured.platform}</span>` : ''}
               </div>
-              <h1 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-vault-cream tracking-tight">${featured.title} <span class="text-vault-muted font-normal text-2xl">(${featured.year})</span></h1>
-              <p class="text-vault-cream/90 text-base sm:text-lg font-medium mt-3 line-clamp-2">"${featured.verdict}"</p>
+              <h1 class="font-display font-black text-2xl sm:text-4xl lg:text-5xl text-vault-cream tracking-tight">${featured.title} <span class="text-vault-muted font-normal text-xl sm:text-2xl">(${featured.year})</span></h1>
+              <p class="text-vault-cream/90 text-sm sm:text-lg font-medium mt-3 line-clamp-2">"${featured.verdict}"</p>
               <div class="mt-6 flex items-center gap-5">
                 <div class="flex items-center gap-2 bg-vault-dark border border-vault-border px-4 py-2 rounded-xl">
                   <span class="text-vault-red font-display font-black text-2xl">${Number(featured.rating).toFixed(1)}</span>
@@ -568,10 +733,15 @@
       }
       empty.classList.add("hidden");
 
-      grid.innerHTML = filtered.map(m => `
+      grid.innerHTML = filtered.map(m => {
+        const posterSrc = m.poster || window.generateVaultFallbackPoster(m.title);
+        const safeCardTitle = String(m.title || "").replace(/'/g, "");
+        return `
         <article onclick="openDetailModal('${m.id}')" class="cursor-pointer bg-vault-card border border-vault-border rounded-2xl overflow-hidden flex flex-col card-hover">
           <div class="relative h-72 overflow-hidden bg-vault-dark">
-            <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover" loading="lazy" />
+            <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer" loading="lazy"
+                 onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeCardTitle}');"
+                 class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-vault-card via-transparent to-black/30"></div>
             
             <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
@@ -605,7 +775,7 @@
             </div>
           </div>
         </article>
-      `).join("");
+      `}).join("");
     };
 
     // Filter Actions
@@ -614,9 +784,9 @@
       ["all", "Review", "Recommendation"].forEach(t => {
         const btn = document.getElementById("tab-" + t);
         if (t === type) {
-          btn.className = "px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-red text-white transition";
+          btn.className = "px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold bg-vault-red text-white transition whitespace-nowrap";
         } else {
-          btn.className = "px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition";
+          btn.className = "px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold bg-vault-card text-vault-muted hover:text-vault-cream border border-vault-border transition whitespace-nowrap";
         }
       });
       renderMovies();
@@ -643,19 +813,26 @@
       setMoodFilter("all");
     };
 
-    // Detail Modal
+    // Detail Modal (Includes X @TheVaultCertify Mention Share & Letterboxd Link)
     window.openDetailModal = function (id) {
       const m = movies.find(item => item.id === id);
       if (!m) return;
+
+      const posterSrc = m.poster || window.generateVaultFallbackPoster(m.title);
+      const safeModalTitle = String(m.title || "").replace(/'/g, "");
+      const tweetText = encodeURIComponent(`"${m.title} (${m.year})" — ${Number(m.rating).toFixed(1)}/10 (${m.tier})\n"${m.verdict}"\nvia @TheVaultCertify https://thevault.rest`);
+      const xIntentUrl = `https://x.com/intent/tweet?text=${tweetText}`;
 
       const modal = document.getElementById("detailModal");
       const content = document.getElementById("detailModalContent");
 
       content.innerHTML = `
         <div class="relative h-64 sm:h-80 bg-vault-dark">
-          <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover opacity-50" />
+          <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer"
+               onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeModalTitle}');"
+               class="w-full h-full object-cover opacity-55" />
           <div class="absolute inset-0 bg-gradient-to-t from-vault-card via-vault-card/60 to-transparent"></div>
-          <button onclick="closeDetailModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/70 text-vault-cream hover:bg-vault-red transition flex items-center justify-center text-xl">&times;</button>
+          <button onclick="closeDetailModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/75 text-vault-cream hover:bg-vault-red transition flex items-center justify-center text-xl">&times;</button>
           
           <div class="absolute bottom-4 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -708,11 +885,31 @@
             <div id="spoilerBox" class="hidden p-4 bg-vault-dark/60 text-sm text-vault-cream/85 border-t border-vault-border whitespace-pre-line">${m.spoilers}</div>
           </div>` : ''}
 
-          ${isAdmin ? `
-          <div class="pt-4 border-t border-vault-border flex items-center justify-end gap-3">
-            <button onclick="openEditorModal('${m.id}')" class="px-4 py-2 rounded-lg bg-vault-dark border border-vault-border text-xs font-bold text-vault-cream hover:border-vault-red">✏️ Edit Entry</button>
-            <button onclick="deleteMovie('${m.id}')" class="px-4 py-2 rounded-lg bg-red-950/60 border border-red-800 text-xs font-bold text-red-300 hover:bg-red-900">🗑️ Delete</button>
-          </div>` : ''}
+          <!-- Social Share & Mention Bar -->
+          <div class="pt-4 border-t border-vault-border flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <a href="${xIntentUrl}" target="_blank" rel="noopener noreferrer"
+                 class="px-3.5 py-2 rounded-xl bg-vault-dark border border-vault-border hover:border-vault-red text-xs font-bold text-vault-cream flex items-center gap-2 transition">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                <span>Mention @TheVaultCertify</span>
+              </a>
+              <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer"
+                 class="px-3.5 py-2 rounded-xl bg-vault-dark border border-vault-border hover:border-vault-red text-xs font-bold text-vault-cream flex items-center gap-2 transition">
+                <span class="flex items-center -space-x-0.5">
+                  <span class="w-2 h-2 rounded-full bg-[#FF8000]"></span>
+                  <span class="w-2 h-2 rounded-full bg-[#00E054]"></span>
+                  <span class="w-2 h-2 rounded-full bg-[#40BCF4]"></span>
+                </span>
+                <span>Letterboxd Log</span>
+              </a>
+            </div>
+
+            ${isAdmin ? `
+            <div class="flex items-center gap-2">
+              <button onclick="openEditorModal('${m.id}')" class="px-4 py-2 rounded-lg bg-vault-dark border border-vault-border text-xs font-bold text-vault-cream hover:border-vault-red">✏️ Edit Entry</button>
+              <button onclick="deleteMovie('${m.id}')" class="px-4 py-2 rounded-lg bg-red-950/60 border border-red-800 text-xs font-bold text-red-300 hover:bg-red-900">🗑️ Delete</button>
+            </div>` : ''}
+          </div>
         </div>
       `;
 
@@ -764,8 +961,14 @@
     window.saveMovie = async function (e) {
       e.preventDefault();
       const editId = document.getElementById("editId").value;
+      const titleVal = document.getElementById("f_title").value.trim();
+      let posterVal = document.getElementById("f_poster").value.trim();
+      if (!posterVal) {
+        posterVal = (await fetchWikiPoster(titleVal)) || window.generateVaultFallbackPoster(titleVal);
+      }
+
       const payload = {
-        title: document.getElementById("f_title").value.trim(),
+        title: titleVal,
         year: Number(document.getElementById("f_year").value),
         type: document.getElementById("f_type").value,
         language: document.getElementById("f_language").value,
@@ -774,7 +977,7 @@
         tier: document.getElementById("f_tier").value,
         platform: document.getElementById("f_platform").value.trim(),
         director: document.getElementById("f_director").value.trim(),
-        poster: document.getElementById("f_poster").value.trim(),
+        poster: posterVal,
         screenplay: document.getElementById("f_screenplay").value.trim(),
         bgm: document.getElementById("f_bgm").value.trim(),
         verdict: document.getElementById("f_verdict").value.trim(),
