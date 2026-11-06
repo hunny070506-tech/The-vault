@@ -643,33 +643,6 @@
     let db = null;
     let auth = null;
 
-    // Render immediately
-    renderMovies();
-
-    try {
-      const app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-      document.getElementById("dbStatusBadge").textContent = "🟢 Live Vault";
-
-      onAuthStateChanged(auth, (user) => {
-        isAdmin = !!(user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
-        updateAdminUI();
-      });
-
-      const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
-      onSnapshot(q, (snapshot) => {
-        const cloudMovies = snapshot.docs.map(d => ({ ...d.data(), id: d.id, rating: normalizeRating(d.data().rating) }));
-        const hasRamayana = cloudMovies.some(m => m.title && m.title.toLowerCase().includes("ramayana"));
-        if (cloudMovies.length === 0) movies = [...DEFAULT_MOVIES];
-        else if (!hasRamayana) movies = [DEFAULT_MOVIES[0], ...cloudMovies];
-        else movies = cloudMovies;
-        renderMovies();
-      }, () => { loadLocalFallback(); });
-    } catch (err) {
-      loadLocalFallback();
-    }
-
     function loadLocalFallback() {
       document.getElementById("dbStatusBadge").textContent = "Local Archive";
       const saved = localStorage.getItem("the_vault_movies_v5");
@@ -849,6 +822,38 @@
       `}).join("");
     };
 
+    // Render the default archive after the renderer is available.
+    window.renderMovies();
+
+    // Start Firebase only after the renderer exists, so the fallback can render too.
+    try {
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      document.getElementById("dbStatusBadge").textContent = "🟢 Live Vault";
+
+      onAuthStateChanged(auth, (user) => {
+        isAdmin = !!(user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+        updateAdminUI();
+      });
+
+      const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        const cloudMovies = snapshot.docs.map(d => ({ ...d.data(), id: d.id, rating: normalizeRating(d.data().rating) }));
+        const hasRamayana = cloudMovies.some(m => m.title && m.title.toLowerCase().includes("ramayana"));
+        if (cloudMovies.length === 0) movies = [...DEFAULT_MOVIES];
+        else if (!hasRamayana) movies = [DEFAULT_MOVIES[0], ...cloudMovies];
+        else movies = cloudMovies;
+        renderMovies();
+      }, (error) => {
+        console.error("Firestore sync failed:", error);
+        loadLocalFallback();
+      });
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      loadLocalFallback();
+    }
+
     window.setTypeFilter = function (type) {
       currentTypeFilter = type;
       ["all", "Review", "Recommendation"].forEach(t => {
@@ -985,12 +990,18 @@
           document.getElementById("editId").value = m.id;
           document.getElementById("f_title").value = m.title || "";
           document.getElementById("f_year").value = m.year || 2026;
+          document.getElementById("f_type").value = m.type || "Review";
+          document.getElementById("f_language").value = m.language || "Pan-India";
+          document.getElementById("f_mood").value = m.mood || "Mythological Epic";
           document.getElementById("f_rating").value = normalizeRating(m.rating);
           document.getElementById("f_tier").value = m.tier || "One-Time Watch";
+          document.getElementById("f_platform").value = m.platform || "";
           document.getElementById("f_synopsis").value = m.synopsis || "";
           document.getElementById("f_cast").value = m.cast || "";
           document.getElementById("f_crew").value = m.crew || "";
           document.getElementById("f_director").value = m.director || "";
+          document.getElementById("f_screenplay").value = m.screenplay || "";
+          document.getElementById("f_bgm").value = m.bgm || "";
           document.getElementById("f_poster").value = m.poster || "";
           document.getElementById("f_verdict").value = m.verdict || "";
           document.getElementById("f_review").value = m.review || "";
@@ -1025,6 +1036,8 @@
         cast: document.getElementById("f_cast").value.trim(),
         crew: document.getElementById("f_crew").value.trim(),
         director: document.getElementById("f_director").value.trim(),
+        screenplay: document.getElementById("f_screenplay").value.trim(),
+        bgm: document.getElementById("f_bgm").value.trim(),
         poster: posterVal,
         verdict: document.getElementById("f_verdict").value.trim(),
         review: document.getElementById("f_review").value.trim(),
