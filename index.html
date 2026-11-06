@@ -124,7 +124,7 @@
             <button onclick="setTypeFilter('Recommendation')" id="tab-Recommendation" class="px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-semibold text-vault-muted hover:text-vault-cream transition whitespace-nowrap">Picks</button>
           </div>
 
-          <!-- Social Buttons (Desktop/Tablet) -->
+          <!-- Social Buttons -->
           <div class="hidden lg:flex items-center gap-1.5">
             <a href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer"
                class="px-3 py-1.5 rounded-xl bg-vault-surface border border-vault-border hover:border-vault-red text-vault-cream text-xs font-bold flex items-center gap-1.5 transition">
@@ -149,7 +149,7 @@
         </div>
       </div>
 
-      <!-- Mobile Search & Quick Social Bar -->
+      <!-- Mobile Search Bar -->
       <div class="flex items-center gap-2 mt-2.5 md:hidden">
         <div class="relative flex-1">
           <input id="mobileSearchInput" type="text" placeholder="Search title, cast, director..."
@@ -182,7 +182,6 @@
   <section class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 w-full">
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-vault-border">
       
-      <!-- Mood Scrollable Pills -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" id="moodFilterBar">
         <button onclick="setMoodFilter('all')" data-mood="all" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-vault-red text-white">All Moods</button>
         <button onclick="setMoodFilter('Mythological Epic')" data-mood="Mythological Epic" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-surface text-vault-muted border border-vault-border hover:text-vault-cream">🏹 Mythological Epic</button>
@@ -193,35 +192,32 @@
         <button onclick="setMoodFilter('Comfort & Comedy')" data-mood="Comfort & Comedy" class="mood-btn shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vault-surface text-vault-muted border border-vault-border hover:text-vault-cream">🍿 Comfort & Comedy</button>
       </div>
 
-      <!-- Dropdown Filters -->
       <div class="flex items-center gap-2 shrink-0">
         <select id="langFilter" onchange="renderMovies()" class="flex-1 sm:flex-initial bg-vault-surface border border-vault-border rounded-lg px-3 py-1.5 text-xs font-semibold text-vault-cream outline-none focus:border-vault-red">
           <option value="all">All Languages</option>
+          <option value="Pan-India">Pan-India</option>
           <option value="Telugu">Telugu</option>
           <option value="Hindi">Hindi</option>
           <option value="Malayalam">Malayalam</option>
           <option value="Tamil">Tamil</option>
           <option value="English">English</option>
-          <option value="Pan-India">Pan-India</option>
         </select>
 
         <select id="tierFilter" onchange="renderMovies()" class="flex-1 sm:flex-initial bg-vault-surface border border-vault-border rounded-lg px-3 py-1.5 text-xs font-semibold text-vault-cream outline-none focus:border-vault-red">
           <option value="all">All Vault Tiers</option>
+          <option value="One-Time Watch">🍿 One-Time Watch</option>
           <option value="Locked in The Vault">🔒 Locked in The Vault</option>
           <option value="Certified Banger">🔥 Certified Banger</option>
-          <option value="One-Time Watch">🍿 One-Time Watch</option>
           <option value="Skip">🚫 Skip</option>
         </select>
       </div>
     </div>
   </section>
 
-  <!-- ================= RESPONSIVE MOVIE GRID ================= -->
-  <!-- Phone: 2 cols | Tablet: 3 cols | Desktop: 4 cols -->
+  <!-- ================= MOVIE GRID ================= -->
   <main class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 flex-1 w-full">
     <div id="moviesGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-5 lg:gap-6"></div>
 
-    <!-- Empty State -->
     <div id="emptyState" class="hidden text-center py-16">
       <p class="font-display text-lg font-bold text-vault-cream">No titles match that filter</p>
       <p class="text-xs text-vault-muted mt-1">Reset filters to view all entries in The Vault.</p>
@@ -229,7 +225,7 @@
     </div>
   </main>
 
-  <!-- ================= MOVIE DETAIL MODAL (Phone Bottom-Sheet / Desktop Center) ================= -->
+  <!-- ================= MOVIE DETAIL MODAL ================= -->
   <div id="detailModal" onclick="if(event.target === this) closeDetailModal()" class="fixed inset-0 z-50 hidden bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div class="bg-vault-card border-t sm:border border-vault-border rounded-t-3xl sm:rounded-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl relative">
       <div id="detailModalContent"></div>
@@ -321,25 +317,23 @@
           </div>
           <div class="col-span-2 sm:col-span-1">
             <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Where to Watch</label>
-            <input id="f_platform" type="text" placeholder="Theatres / IMAX / Prime Video" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-sm text-vault-cream" />
+            <input id="f_platform" type="text" placeholder="Theatres / IMAX" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-sm text-vault-cream" />
           </div>
         </div>
 
-        <!-- IMDb Synopsis -->
         <div>
           <label class="block text-[11px] font-bold uppercase text-vault-imdb mb-1">IMDb Official Synopsis *</label>
           <textarea id="f_synopsis" required rows="2" placeholder="Official plot premise..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream"></textarea>
         </div>
 
-        <!-- Cast & Crew -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Main Cast & Roles *</label>
-            <input id="f_cast" required type="text" placeholder="Ranbir Kapoor (Rama), Yash (Ravana), Sai Pallavi (Sita)" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
+            <input id="f_cast" required type="text" placeholder="Ranbir Kapoor (Rama), Yash (Ravana)" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
           </div>
           <div>
-            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Key Crew (Director, Music, DOP) *</label>
-            <input id="f_crew" required type="text" placeholder="Dir: Nitesh Tiwari | Music: Hans Zimmer & A.R. Rahman" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
+            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Key Crew *</label>
+            <input id="f_crew" required type="text" placeholder="Dir: Nitesh Tiwari | Music: Hans Zimmer" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
           </div>
         </div>
 
@@ -350,17 +344,17 @@
           </div>
           <div>
             <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Screenplay / Craft Note</label>
-            <input id="f_screenplay" type="text" placeholder="Ravana's psychological arc shines; catalysts rushed" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
+            <input id="f_screenplay" type="text" placeholder="Ravana arc shines" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
           </div>
           <div>
-            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Sound & Score Note</label>
-            <input id="f_bgm" type="text" placeholder="Oscar-tier sound design; underwhelming score" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
+            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Sound Note</label>
+            <input id="f_bgm" type="text" placeholder="Oscar-tier sound design" class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
           </div>
         </div>
 
         <div>
           <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">One-Line Verdict *</label>
-          <input id="f_verdict" required type="text" placeholder="A visually grand magnum opus anchored by Yash and Oscar-tier sound, held back by a rushed core." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
+          <input id="f_verdict" required type="text" placeholder="A visually grand magnum opus..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream" />
         </div>
 
         <div>
@@ -369,7 +363,7 @@
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Spoiler Breakdown (Optional)</label>
+          <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1">Spoiler Breakdown</label>
           <textarea id="f_spoilers" rows="2" placeholder="Hidden behind spoiler button..." class="w-full bg-vault-dark border border-vault-border rounded-lg px-3 py-2 text-xs sm:text-sm text-vault-cream"></textarea>
         </div>
 
@@ -420,15 +414,12 @@
     </div>
   </footer>
 
-  <!-- ================= APPLICATION & FIREBASE SCRIPT ================= -->
+  <!-- ================= SCRIPT ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // =========================================================================
-    // PRE-CONFIGURED ADMIN GMAIL & FIREBASE CREDENTIALS
-    // =========================================================================
     const ADMIN_EMAIL = "hunny070506@gmail.com";
 
     const firebaseConfig = {
@@ -439,15 +430,12 @@
       messagingSenderId: "614995204206",
       appId: "1:614995204206:web:ea8c90fb00413b8503ae7f"
     };
-    // =========================================================================
 
-    // Convert any legacy /10 rating to /5 scale automatically
     function normalizeRating(val) {
       const num = Number(val) || 3.0;
       return num > 5 ? Number((num / 2).toFixed(1)) : Number(num.toFixed(1));
     }
 
-    // Render 5-Vault Image Meter (Uses logo.jpg with fallback SVG Vault icon)
     window.renderVaultMeterHTML = function (scoreOutOf5, sizeClass = "w-5 h-5") {
       const rating = normalizeRating(scoreOutOf5);
       const fullCount = Math.round(rating);
@@ -468,7 +456,6 @@
       return `<div class="inline-flex items-center gap-1">${iconsHTML}</div>`;
     };
 
-    // High-contrast fallback SVG poster
     window.generateVaultFallbackPoster = function (title = "THE VAULT", year = "") {
       const safeTitle = String(title).replace(/[<>&"']/g, "");
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
@@ -489,7 +476,6 @@
       return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
     };
 
-    // Pre-Loaded Movies (Featuring Polished Ramayana: Part 1 Review at 3.0 / 5)
     const DEFAULT_MOVIES = [
       {
         id: "ramayana-2026",
@@ -529,13 +515,13 @@
         director: "Swaroop RSJ",
         poster: "",
         synopsis: "Agent Sai Srinivasa Athreya, a quirky small-town detective in Nellore who models himself after Sherlock Holmes, gets entangled in a dangerous web of unidentified dead bodies found along railway tracks and a chilling religious conspiracy.",
-        cast: "Naveen Polishetty (Agent Athreya), Shruti Sharma (Sneha), Suhas (Agent Bala), Appaji Ambarisha Darbha (Sub-Inspector), Darbha Appaji",
-        crew: "Director & Writer: Swaroop RSJ | Producer: Rahul Yadav Nakka | Music: Mark K Robin | Cinematography: Sunny Kurapati | Editor: Amit Tripathi",
-        screenplay: "Effortless blend of Nellore humor and a layered procedural conspiracy where every early gag pays off.",
-        bgm: "Mark K Robin's infectious detective brass theme elevates every clue discovery.",
+        cast: "Naveen Polishetty (Agent Athreya), Shruti Sharma (Sneha), Suhas (Agent Bala), Appaji Ambarisha Darbha",
+        crew: "Director & Writer: Swaroop RSJ | Producer: Rahul Yadav Nakka | Music: Mark K Robin",
+        screenplay: "Effortless blend of Nellore humor and a layered procedural conspiracy.",
+        bgm: "Mark K Robin's infectious detective brass theme.",
         verdict: "One of Indian cinema's sharpest original detective whodunits—funny, grounded, and relentlessly clever.",
-        review: "What starts as a quirky small-town detective agency comedy gradually unravels into a genuinely gripping investigative thriller. Every seemingly throwaway gag in the first act pays off as a crucial clue in the third act.",
-        spoilers: "The railway track body disposal racket and the emotional reveal involving Athreya's own mother's ashes tie the mystery together without a single loose thread.",
+        review: "What starts as a quirky small-town detective agency comedy gradually unravels into a genuinely gripping investigative thriller.",
+        spoilers: "The railway track body disposal racket ties the mystery together without a single loose thread.",
         featured: false,
         viewerRatingSum: 86,
         viewerRatingCount: 19,
@@ -553,14 +539,14 @@
         platform: "Netflix / Prime Video",
         director: "Rian Johnson",
         poster: "",
-        synopsis: "Renowned crime novelist Harlan Thrombey is found dead at his estate just after his 85th birthday, prompting the inquisitive and debonair Detective Benoit Blanc to investigate his dysfunctional, combative family.",
-        cast: "Daniel Craig (Benoit Blanc), Ana de Armas (Marta Cabrera), Chris Evans (Ransom Drysdale), Jamie Lee Curtis (Linda Drysdale), Christopher Plummer (Harlan Thrombey)",
-        crew: "Director & Writer: Rian Johnson | Producers: Ram Bergman, Rian Johnson | Music: Nathan Johnson | Cinematography: Steve Yedlin | Editor: Bob Ducsay",
+        synopsis: "Renowned crime novelist Harlan Thrombey is found dead at his estate just after his 85th birthday, prompting Detective Benoit Blanc to investigate.",
+        cast: "Daniel Craig, Ana de Armas, Chris Evans",
+        crew: "Director: Rian Johnson | Music: Nathan Johnson",
         screenplay: "Subverts the classic Agatha Christie formula into a mid-movie inverted thriller.",
-        bgm: "Nathan Johnson's sharp, harpsichord-driven chamber strings.",
+        bgm: "Nathan Johnson's sharp chamber strings.",
         verdict: "A wickedly entertaining puzzle box that flips the murder mystery genre on its head.",
-        review: "By revealing the 'howdunit' in the first forty minutes and shifting the suspense onto Marta's survival, Rian Johnson keeps the audience on the edge of their seat before pulling the rug out again in the finale.",
-        spoilers: "Ransom swapping the labels on the vials—and Marta instinctively giving Harlan the right dose by reading the viscosity—is peak mystery writing.",
+        review: "By revealing the 'howdunit' in the first forty minutes and shifting suspense to Marta's survival.",
+        spoilers: "Ransom swapping the labels on the vials is peak mystery writing.",
         featured: false,
         viewerRatingSum: 72,
         viewerRatingCount: 16,
@@ -578,14 +564,14 @@
         platform: "JioHotstar",
         director: "Jeethu Joseph",
         poster: "",
-        synopsis: "Georgekutty, a cable TV operator and devoted family man in a quiet Kerala town, uses his street smarts and love for cinema to construct an airtight alibi when his family accidentally commits a crime against the son of an Inspector General of Police.",
-        cast: "Mohanlal (Georgekutty), Meena (Rani), Ansiba Hassan (Anju), Esther Anil (chinnumol), Asha Sarath (IG Geetha Prabhakar), Siddique (Prabhakar)",
-        crew: "Director & Writer: Jeethu Joseph | Producer: Antony Perumbavoor | Music: Anil Johnson & Vinu Thomas | Cinematography: Sujith Vaassudev | Editor: Ayoob Khan",
-        screenplay: "Textbook alibi construction using everyday observations and cinema tropes.",
-        bgm: "Slow-building tension score during the police interrogation sequence.",
+        synopsis: "Georgekutty constructs an airtight alibi when his family accidentally commits a crime.",
+        cast: "Mohanlal, Meena, Asha Sarath",
+        crew: "Director: Jeethu Joseph | Music: Anil Johnson",
+        screenplay: "Textbook alibi construction using everyday observations.",
+        bgm: "Slow-building tension score during police interrogation.",
         verdict: "The gold standard of family-man survival thrillers with an unforgettable final ten minutes.",
-        review: "Georgekutty's psychological chess match against the police force proves you don't need high-speed chases to create palm-sweating tension. The screenplay earns every twist through careful first-half setup.",
-        spoilers: "Hiding the body underneath the newly constructed police station itself remains one of the greatest endings in modern thriller history.",
+        review: "Georgekutty's psychological chess match against the police force proves you don't need high-speed chases.",
+        spoilers: "Hiding the body underneath the police station remains an all-time great ending.",
         featured: false,
         viewerRatingSum: 118,
         viewerRatingCount: 24,
@@ -593,19 +579,13 @@
       }
     ];
 
-    // Fast Cached Poster Fetcher (Runs in parallel and caches in localStorage)
     const posterCache = JSON.parse(localStorage.getItem("vault_poster_cache_v3") || "{}");
 
     async function fetchWikiPoster(title, year = "") {
       const cacheKey = `${title}_${year}`.toLowerCase();
       if (posterCache[cacheKey]) return posterCache[cacheKey];
 
-      const queries = [
-        `${title} ${year} film`,
-        `${title} film`,
-        title
-      ];
-
+      const queries = [`${title} ${year} film`, `${title} film`, title];
       for (const qStr of queries) {
         try {
           const url = `https://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&prop=pageimages&piprop=thumbnail&pithumbsize=600&generator=search&gsrsearch=${encodeURIComponent(qStr)}&gsrlimit=1`;
@@ -628,21 +608,13 @@
     window.autoFetchPoster = async function () {
       const title = document.getElementById("f_title").value.trim();
       const year = document.getElementById("f_year").value.trim();
-      if (!title) {
-        alert("Enter the Movie Title first, then tap ⚡ Poster.");
-        return;
-      }
+      if (!title) { alert("Enter title first!"); return; }
       const btn = document.getElementById("autoPosterBtn");
       btn.textContent = "...";
       const foundUrl = await fetchWikiPoster(title, year);
-      if (foundUrl) {
-        document.getElementById("f_poster").value = foundUrl;
-        btn.textContent = "✓ Found";
-      } else {
-        document.getElementById("f_poster").value = window.generateVaultFallbackPoster(title, year);
-        btn.textContent = "✓ Vault Art";
-      }
-      setTimeout(() => { btn.textContent = "⚡ Poster"; }, 1800);
+      document.getElementById("f_poster").value = foundUrl || window.generateVaultFallbackPoster(title, year);
+      btn.textContent = "✓ Done";
+      setTimeout(() => { btn.textContent = "⚡ Poster"; }, 1500);
     };
 
     window.handlePosterUpload = function (event) {
@@ -653,12 +625,10 @@
         const img = new Image();
         img.onload = function () {
           const canvas = document.createElement("canvas");
-          const maxW = 480;
-          const scale = Math.min(1, maxW / img.width);
+          const scale = Math.min(1, 480 / img.width);
           canvas.width = img.width * scale;
           canvas.height = img.height * scale;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
           document.getElementById("f_poster").value = canvas.toDataURL("image/jpeg", 0.82);
         };
         img.src = e.target.result;
@@ -673,11 +643,9 @@
     let db = null;
     let auth = null;
 
-    // Render immediately with local data so UI loads in 0ms
+    // Render immediately
     renderMovies();
-    hydrateAllPostersParallel();
 
-    // Connect to Firebase
     try {
       const app = initializeApp(firebaseConfig);
       auth = getAuth(app);
@@ -691,30 +659,13 @@
 
       const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
       onSnapshot(q, (snapshot) => {
-        const cloudMovies = snapshot.docs.map(d => {
-          const data = d.data();
-          return {
-            ...data,
-            id: d.id,
-            rating: normalizeRating(data.rating)
-          };
-        });
-
-        // Ensure Ramayana: Part 1 (2026) is always present at the top if not yet added to cloud
+        const cloudMovies = snapshot.docs.map(d => ({ ...d.data(), id: d.id, rating: normalizeRating(d.data().rating) }));
         const hasRamayana = cloudMovies.some(m => m.title && m.title.toLowerCase().includes("ramayana"));
-        if (cloudMovies.length === 0) {
-          movies = [...DEFAULT_MOVIES];
-        } else if (!hasRamayana) {
-          movies = [DEFAULT_MOVIES[0], ...cloudMovies];
-        } else {
-          movies = cloudMovies;
-        }
-
+        if (cloudMovies.length === 0) movies = [...DEFAULT_MOVIES];
+        else if (!hasRamayana) movies = [DEFAULT_MOVIES[0], ...cloudMovies];
+        else movies = cloudMovies;
         renderMovies();
-        hydrateAllPostersParallel();
-      }, () => {
-        loadLocalFallback();
-      });
+      }, () => { loadLocalFallback(); });
     } catch (err) {
       loadLocalFallback();
     }
@@ -722,40 +673,21 @@
     function loadLocalFallback() {
       document.getElementById("dbStatusBadge").textContent = "Local Archive";
       const saved = localStorage.getItem("the_vault_movies_v5");
-      if (saved) {
-        movies = JSON.parse(saved).map(m => ({ ...m, rating: normalizeRating(m.rating) }));
-      } else {
-        movies = [...DEFAULT_MOVIES];
-      }
+      if (saved) movies = JSON.parse(saved).map(m => ({ ...m, rating: normalizeRating(m.rating) }));
+      else movies = [...DEFAULT_MOVIES];
       isAdmin = localStorage.getItem("the_vault_demo_admin") === "true";
       updateAdminUI();
       renderMovies();
-      hydrateAllPostersParallel();
-    }
-
-    async function hydrateAllPostersParallel() {
-      const tasks = movies.map(async (m) => {
-        if (!m.poster || m.poster.includes("unsplash.com")) {
-          const found = await fetchWikiPoster(m.title, m.year);
-          m.poster = found || window.generateVaultFallbackPoster(m.title, m.year);
-          return true;
-        }
-        return false;
-      });
-      const results = await Promise.all(tasks);
-      if (results.some(Boolean)) renderMovies();
     }
 
     function updateAdminUI() {
       const addBtn = document.getElementById("addMovieBtn");
       const authBtn = document.getElementById("adminAuthBtn");
       if (isAdmin) {
-        addBtn.classList.remove("hidden");
-        addBtn.classList.add("inline-flex");
+        addBtn.classList.remove("hidden"); addBtn.classList.add("inline-flex");
         authBtn.textContent = "🔓 Sign Out";
       } else {
-        addBtn.classList.add("hidden");
-        addBtn.classList.remove("inline-flex");
+        addBtn.classList.add("hidden"); addBtn.classList.remove("inline-flex");
         authBtn.textContent = "🔒 Admin";
       }
       renderMovies();
@@ -768,19 +700,9 @@
         updateAdminUI();
         return;
       }
-      if (auth.currentUser) {
-        await signOut(auth);
-      } else {
-        const provider = new GoogleAuthProvider();
-        try {
-          const result = await signInWithPopup(auth, provider);
-          if (result.user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-            alert("Signed in as " + result.user.email + ", which is not authorized.");
-            await signOut(auth);
-          }
-        } catch (e) {
-          alert("Login error: " + e.message);
-        }
+      if (auth.currentUser) await signOut(auth);
+      else {
+        try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { alert(e.message); }
       }
     };
 
@@ -793,7 +715,6 @@
       }
     }
 
-    // Viewer 5-Vault Rating Helpers
     function getViewerStats(movie) {
       const localVotes = JSON.parse(localStorage.getItem("vault_viewer_votes_v1") || "{}");
       const userVote = localVotes[movie.id] || null;
@@ -801,22 +722,17 @@
       const baseCount = Number(movie.viewerRatingCount) || 12;
       const totalSum = userVote ? baseSum + Number(userVote) : baseSum;
       const totalCount = userVote ? baseCount + 1 : baseCount;
-      const avg = (totalSum / totalCount).toFixed(1);
-      return { avg, count: totalCount, userVote };
+      return { avg: (totalSum / totalCount).toFixed(1), count: totalCount, userVote };
     }
 
-    window.submitViewerVaultRating = async function (movieId, vaultScore) {
-      const score = Number(vaultScore);
+    window.submitViewerVaultRating = function (movieId, vaultScore) {
       const localVotes = JSON.parse(localStorage.getItem("vault_viewer_votes_v1") || "{}");
-      localVotes[movieId] = score;
+      localVotes[movieId] = Number(vaultScore);
       localStorage.setItem("vault_viewer_votes_v1", JSON.stringify(localVotes));
-
-      // Re-render modal immediately to show updated viewer 5-vault meter
       openDetailModal(movieId);
       renderMovies();
     };
 
-    // Main Render Function
     window.renderMovies = function () {
       const search = (document.getElementById("searchInput").value || "").toLowerCase();
       const lang = document.getElementById("langFilter").value;
@@ -827,56 +743,40 @@
 
       if (featured && currentTypeFilter === "all" && currentMoodFilter === "all" && !search && lang === "all" && tier === "all") {
         const posterSrc = featured.poster || window.generateVaultFallbackPoster(featured.title, featured.year);
-        const safeFeaturedTitle = String(featured.title || "").replace(/'/g, "");
         const fScore = normalizeRating(featured.rating);
-
         heroEl.classList.remove("hidden");
         heroEl.innerHTML = `
           <div onclick="openDetailModal('${featured.id}')" class="cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden border border-vault-border bg-vault-card grid grid-cols-1 md:grid-cols-12 shadow-xl group">
-            
-            <!-- Poster Column -->
             <div class="md:col-span-4 lg:col-span-3 relative h-64 sm:h-80 md:h-auto bg-vault-dark overflow-hidden">
               <img src="${posterSrc}" alt="${featured.title}" referrerpolicy="no-referrer"
-                   onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeFeaturedTitle}', '${featured.year}');"
+                   onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${featured.title.replace(/'/g, "")}', '${featured.year}');"
                    class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-vault-card via-transparent to-transparent"></div>
               <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-vault-red text-white shadow">Featured Review</span>
             </div>
-
-            <!-- Content Column -->
             <div class="md:col-span-8 lg:col-span-9 p-4 sm:p-7 lg:p-8 flex flex-col justify-between">
               <div>
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2.5">
                   <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getTierStyle(featured.tier)}">${featured.tier}</span>
                   <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-vault-surface border border-vault-border text-vault-cream">${featured.language}</span>
                   <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-vault-surface border border-vault-border text-vault-muted">${featured.mood}</span>
-                  ${featured.platform ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-vault-surface border border-vault-border text-vault-muted">🍿 ${featured.platform}</span>` : ''}
                 </div>
-
                 <h1 class="font-display font-black text-2xl sm:text-3xl lg:text-4xl text-vault-cream tracking-tight">
                   ${featured.title} <span class="text-vault-muted font-medium text-lg sm:text-xl">(${featured.year})</span>
                 </h1>
-
                 <p class="text-vault-cream/90 text-xs sm:text-sm font-medium mt-2 line-clamp-2 italic">"${featured.verdict}"</p>
-
                 ${featured.synopsis ? `
                 <div class="mt-3 p-2.5 sm:p-3 rounded-xl bg-vault-surface/90 border border-vault-border">
                   <span class="inline-block px-1.5 py-0.5 rounded bg-vault-imdb text-black font-extrabold text-[10px] uppercase tracking-wider mr-1.5">IMDb Synopsis</span>
                   <span class="text-xs text-vault-cream/80 line-clamp-2">${featured.synopsis}</span>
                 </div>` : ''}
               </div>
-
-              <!-- 5-Vault Score Bar -->
               <div class="mt-4 pt-3 border-t border-vault-border flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                   ${window.renderVaultMeterHTML(fScore, "w-6 h-6 sm:w-7 sm:h-7")}
-                  <div>
-                    <span class="font-display font-black text-lg sm:text-xl text-vault-cream">${fScore.toFixed(1)} <span class="text-xs text-vault-muted font-normal">/ 5 Vaults</span></span>
-                  </div>
+                  <span class="font-display font-black text-lg sm:text-xl text-vault-cream">${fScore.toFixed(1)} <span class="text-xs text-vault-muted font-normal">/ 5 Vaults</span></span>
                 </div>
-                <span class="text-xs sm:text-sm font-bold text-vault-red group-hover:translate-x-1 transition inline-flex items-center gap-1">
-                  Read Full Review & Rate &rarr;
-                </span>
+                <span class="text-xs sm:text-sm font-bold text-vault-red group-hover:translate-x-1 transition inline-flex items-center gap-1">Read Full Review & Rate &rarr;</span>
               </div>
             </div>
           </div>
@@ -885,7 +785,6 @@
         heroEl.classList.add("hidden");
       }
 
-      // Filter Grid
       const filtered = movies.filter(m => {
         const matchesType = currentTypeFilter === "all" || m.type === currentTypeFilter;
         const matchesMood = currentMoodFilter === "all" || m.mood === currentMoodFilter;
@@ -913,31 +812,25 @@
 
       grid.innerHTML = filtered.map(m => {
         const posterSrc = m.poster || window.generateVaultFallbackPoster(m.title, m.year);
-        const safeTitle = String(m.title || "").replace(/'/g, "");
         const score = normalizeRating(m.rating);
-
         return `
         <article onclick="openDetailModal('${m.id}')" class="movie-card cursor-pointer bg-vault-card border border-vault-border rounded-xl sm:rounded-2xl overflow-hidden flex flex-col">
           <div class="relative poster-aspect w-full overflow-hidden bg-vault-dark">
             <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer" loading="lazy"
-                 onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeTitle}', '${m.year}');"
+                 onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${m.title.replace(/'/g, "")}', '${m.year}');"
                  class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-vault-card via-transparent to-black/30"></div>
-
-            <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+            <div class="absolute top-2 left-2">
               <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-black/80 text-vault-cream border border-white/10">${m.language}</span>
             </div>
-
             <div class="absolute top-2 right-2 bg-black/85 border border-vault-red/60 rounded-lg px-2 py-0.5 flex items-center gap-1">
               <span class="font-display font-black text-vault-cream text-xs sm:text-sm">${score.toFixed(1)}</span>
               <span class="text-[9px] text-vault-muted">/5</span>
             </div>
-
-            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+            <div class="absolute bottom-2 left-2 right-2">
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${getTierStyle(m.tier)} truncate">${m.tier}</span>
             </div>
           </div>
-
           <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between text-[10px] sm:text-xs text-vault-muted mb-1">
@@ -947,7 +840,6 @@
               <h3 class="font-display font-bold text-sm sm:text-lg text-vault-cream leading-snug line-clamp-1">${m.title}</h3>
               <p class="text-[11px] sm:text-xs text-vault-cream/75 mt-1 line-clamp-2 italic">"${m.verdict}"</p>
             </div>
-
             <div class="mt-3 pt-2.5 border-t border-vault-border/70 flex items-center justify-between">
               ${window.renderVaultMeterHTML(score, "w-4 h-4 sm:w-4 sm:h-4")}
               <span class="text-[11px] text-vault-red font-bold">Open &rarr;</span>
@@ -987,20 +879,16 @@
       setMoodFilter("all");
     };
 
-    // Detail Modal with IMDb Synopsis, Cast & Crew, and Interactive 5-Vault Viewer Rating Meter
     window.openDetailModal = function (id) {
       const m = movies.find(item => item.id === id);
       if (!m) return;
 
       const posterSrc = m.poster || window.generateVaultFallbackPoster(m.title, m.year);
-      const safeModalTitle = String(m.title || "").replace(/'/g, "");
       const score = normalizeRating(m.rating);
       const viewer = getViewerStats(m);
-
       const tweetText = encodeURIComponent(`🎬 ${m.title} (${m.year}) — ${score.toFixed(1)}/5 Vaults (${m.tier})\n\n"${m.verdict}"\n\nFull review on @TheVaultCertify https://thevault.rest`);
       const xIntentUrl = `https://x.com/intent/tweet?text=${tweetText}`;
 
-      // Build Interactive 5-Vault Viewer Buttons
       const activeViewerCount = viewer.userVote || Math.round(Number(viewer.avg));
       let interactiveVaultsHTML = "";
       for (let v = 1; v <= 5; v++) {
@@ -1025,29 +913,20 @@
       const content = document.getElementById("detailModalContent");
 
       content.innerHTML = `
-        <!-- Top Banner -->
         <div class="relative p-5 sm:p-7 bg-vault-surface border-b border-vault-border flex flex-col sm:flex-row gap-5 items-start">
           <button onclick="closeDetailModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-vault-dark border border-vault-border text-vault-cream hover:bg-vault-red transition flex items-center justify-center text-lg">&times;</button>
-
-          <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer"
-               onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeModalTitle}', '${m.year}');"
-               class="w-28 sm:w-36 poster-aspect object-cover rounded-xl border border-vault-border shadow-lg shrink-0" />
-
+          <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer" class="w-28 sm:w-36 poster-aspect object-cover rounded-xl border border-vault-border shadow-lg shrink-0" />
           <div class="flex-1 pr-6">
             <div class="flex flex-wrap gap-1.5 mb-2">
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${getTierStyle(m.tier)}">${m.tier}</span>
               <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-cream">${m.language}</span>
               <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-vault-dark border border-vault-border text-vault-muted">${m.mood}</span>
             </div>
-
             <h2 class="font-display font-black text-2xl sm:text-3xl text-vault-cream leading-tight">
               ${m.title} <span class="text-vault-muted font-normal text-lg">(${m.year})</span>
             </h2>
-
-            ${m.director ? `<p class="text-xs text-vault-muted mt-1">Directed by <strong class="text-vault-cream">${m.director}</strong> ${m.platform ? `• <strong class="text-vault-cream">${m.platform}</strong>` : ''}</p>` : ''}
-
-            <!-- Critic 5-Vault Score -->
-            <div class="mt-4 inline-flex flex-wrap items-center gap-3 bg-vault-dark border border-vault-border px-3.5 py-2 rounded-xl">
+            ${m.director ? `<p class="text-xs text-vault-muted mt-1">Directed by <strong class="text-vault-cream">${m.director}</strong></p>` : ''}
+            <div class="mt-4 inline-flex items-center gap-3 bg-vault-dark border border-vault-border px-3.5 py-2 rounded-xl">
               ${window.renderVaultMeterHTML(score, "w-6 h-6")}
               <div>
                 <span class="font-display font-black text-xl text-vault-red">${score.toFixed(1)} <span class="text-xs text-vault-muted font-normal">/ 5 Vaults</span></span>
@@ -1056,115 +935,39 @@
             </div>
           </div>
         </div>
-
-        <!-- Body Content -->
         <div class="p-5 sm:p-7 space-y-5">
-
-          <!-- IMDb Synopsis Box -->
           ${m.synopsis ? `
           <div class="p-4 rounded-xl bg-vault-surface border border-vault-border">
-            <div class="flex items-center gap-2 mb-1.5">
-              <span class="px-2 py-0.5 rounded bg-vault-imdb text-black font-extrabold text-[10px] uppercase tracking-wider">IMDb Synopsis</span>
-              <span class="text-[11px] text-vault-muted font-semibold">Official Plot Premise</span>
-            </div>
+            <span class="inline-block px-2 py-0.5 rounded bg-vault-imdb text-black font-extrabold text-[10px] uppercase tracking-wider mb-1.5">IMDb Synopsis</span>
             <p class="text-xs sm:text-sm text-vault-cream/90 leading-relaxed">${m.synopsis}</p>
           </div>` : ''}
-
-          <!-- Cast & Crew Grid -->
           ${(m.cast || m.crew) ? `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            ${m.cast ? `
-            <div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-vault-red block mb-1">🎭 Cast & Characters</span>
-              <p class="text-xs text-vault-cream/90 leading-relaxed">${m.cast}</p>
-            </div>` : ''}
-            ${m.crew ? `
-            <div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-vault-red block mb-1">🎬 Crew & Production</span>
-              <p class="text-xs text-vault-cream/90 leading-relaxed">${m.crew}</p>
-            </div>` : ''}
+            ${m.cast ? `<div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border"><span class="text-[11px] font-bold uppercase text-vault-red block mb-1">🎭 Cast</span><p class="text-xs text-vault-cream/90">${m.cast}</p></div>` : ''}
+            ${m.crew ? `<div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border"><span class="text-[11px] font-bold uppercase text-vault-red block mb-1">🎬 Crew</span><p class="text-xs text-vault-cream/90">${m.crew}</p></div>` : ''}
           </div>` : ''}
-
-          <!-- One-Line Verdict -->
           <div class="p-4 rounded-xl bg-vault-dark border-l-4 border-vault-red">
             <p class="text-[10px] uppercase font-bold tracking-wider text-vault-red mb-1">The Vault Verdict</p>
             <p class="text-vault-cream font-semibold text-sm sm:text-base">"${m.verdict}"</p>
           </div>
-
-          <!-- Craft Highlights -->
-          ${(m.screenplay || m.bgm) ? `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            ${m.screenplay ? `
-            <div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border">
-              <span class="text-[11px] font-bold uppercase text-vault-muted block mb-1">✍️ Direction & Screenplay</span>
-              <p class="text-xs sm:text-sm text-vault-cream">${m.screenplay}</p>
-            </div>` : ''}
-            ${m.bgm ? `
-            <div class="p-3.5 rounded-xl bg-vault-dark border border-vault-border">
-              <span class="text-[11px] font-bold uppercase text-vault-muted block mb-1">🎵 Sound Design & Score</span>
-              <p class="text-xs sm:text-sm text-vault-cream">${m.bgm}</p>
-            </div>` : ''}
-          </div>` : ''}
-
-          <!-- Full Review -->
           <div>
             <h4 class="font-display font-bold text-base sm:text-lg text-vault-cream mb-2">The Vault Review</h4>
             <div class="text-xs sm:text-sm text-vault-cream/90 leading-relaxed whitespace-pre-line space-y-3">${m.review}</div>
           </div>
-
-          <!-- Spoilers -->
-          ${m.spoilers ? `
-          <div class="border border-vault-border rounded-xl overflow-hidden">
-            <button onclick="document.getElementById('spoilerBox').classList.toggle('hidden')" class="w-full px-4 py-2.5 bg-vault-dark text-left flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-400">
-              <span>⚠️ Spoiler Vault (Highlight & Pacing Breakdown)</span>
-              <span>Tap to Toggle</span>
-            </button>
-            <div id="spoilerBox" class="hidden p-4 bg-vault-dark/70 text-xs sm:text-sm text-vault-cream/85 border-t border-vault-border whitespace-pre-line">${m.spoilers}</div>
-          </div>` : ''}
-
-          <!-- INTERACTIVE VIEWER 5-VAULT RATING METER -->
           <div class="p-4 sm:p-5 rounded-2xl bg-vault-surface border border-vault-border flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="text-center sm:text-left">
+            <div>
               <span class="text-xs font-extrabold uppercase tracking-wider text-vault-red block">Audience Vault Meter</span>
-              <h5 class="font-display font-bold text-base text-vault-cream">Rate this movie out of 5 Vaults</h5>
-              <p class="text-xs text-vault-muted mt-0.5">
-                Viewer Average: <strong class="text-vault-cream">${viewer.avg} / 5 Vaults</strong> (${viewer.count} ratings)
-                ${viewer.userVote ? `<span class="text-vault-red font-bold ml-1">• You rated ${viewer.userVote}/5</span>` : ''}
-              </p>
+              <h5 class="font-display font-bold text-base text-vault-cream">Rate out of 5 Vaults</h5>
+              <p class="text-xs text-vault-muted mt-0.5">Average: <strong class="text-vault-cream">${viewer.avg} / 5</strong> (${viewer.count} ratings)</p>
             </div>
-            <div class="flex items-center gap-1 sm:gap-1.5">
-              ${interactiveVaultsHTML}
-            </div>
+            <div class="flex items-center gap-1">${interactiveVaultsHTML}</div>
           </div>
-
-          <!-- Social Share & Admin Actions -->
-          <div class="pt-3 border-t border-vault-border flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-2">
-              <a href="${xIntentUrl}" target="_blank" rel="noopener noreferrer"
-                 class="px-3.5 py-2 rounded-xl bg-vault-dark border border-vault-border hover:border-vault-red text-xs font-bold text-vault-cream flex items-center gap-1.5 transition">
-                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                <span>Share on X @TheVaultCertify</span>
-              </a>
-              <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer"
-                 class="px-3.5 py-2 rounded-xl bg-vault-dark border border-vault-border hover:border-vault-red text-xs font-bold text-vault-cream flex items-center gap-1.5 transition">
-                <span class="flex items-center -space-x-0.5">
-                  <span class="w-2 h-2 rounded-full bg-[#FF8000]"></span>
-                  <span class="w-2 h-2 rounded-full bg-[#00E054]"></span>
-                  <span class="w-2 h-2 rounded-full bg-[#40BCF4]"></span>
-                </span>
-                <span>Letterboxd</span>
-              </a>
-            </div>
-
-            ${isAdmin ? `
-            <div class="flex items-center gap-2">
-              <button onclick="openEditorModal('${m.id}')" class="px-3.5 py-2 rounded-xl bg-vault-dark border border-vault-border text-xs font-bold text-vault-cream hover:border-vault-red">✏️ Edit</button>
-              <button onclick="deleteMovie('${m.id}')" class="px-3.5 py-2 rounded-xl bg-red-950/60 border border-red-800 text-xs font-bold text-red-300">🗑️ Delete</button>
-            </div>` : ''}
+          <div class="pt-3 border-t border-vault-border flex items-center justify-between">
+            <a href="${xIntentUrl}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-vault-dark border border-vault-border text-xs font-bold text-vault-cream">Share on X</a>
+            ${isAdmin ? `<button onclick="openEditorModal('${m.id}')" class="px-3 py-2 rounded-xl bg-vault-dark border border-vault-border text-xs font-bold text-vault-cream">Edit</button>` : ''}
           </div>
         </div>
       `;
-
       modal.classList.remove("hidden");
     };
 
@@ -1172,33 +975,23 @@
       document.getElementById("detailModal").classList.add("hidden");
     };
 
-    // Admin Editor Modal
     window.openEditorModal = function (id = null) {
       closeDetailModal();
-      const form = document.getElementById("movieForm");
-      form.reset();
+      document.getElementById("movieForm").reset();
       document.getElementById("editId").value = "";
-      document.getElementById("editorTitle").textContent = id ? "Edit Vault Entry" : "Add to The Vault";
-
       if (id) {
         const m = movies.find(item => item.id === id);
         if (m) {
           document.getElementById("editId").value = m.id;
           document.getElementById("f_title").value = m.title || "";
           document.getElementById("f_year").value = m.year || 2026;
-          document.getElementById("f_type").value = m.type || "Review";
-          document.getElementById("f_language").value = m.language || "Pan-India";
-          document.getElementById("f_mood").value = m.mood || "Mythological Epic";
           document.getElementById("f_rating").value = normalizeRating(m.rating);
           document.getElementById("f_tier").value = m.tier || "One-Time Watch";
-          document.getElementById("f_platform").value = m.platform || "";
           document.getElementById("f_synopsis").value = m.synopsis || "";
           document.getElementById("f_cast").value = m.cast || "";
           document.getElementById("f_crew").value = m.crew || "";
           document.getElementById("f_director").value = m.director || "";
           document.getElementById("f_poster").value = m.poster || "";
-          document.getElementById("f_screenplay").value = m.screenplay || "";
-          document.getElementById("f_bgm").value = m.bgm || "";
           document.getElementById("f_verdict").value = m.verdict || "";
           document.getElementById("f_review").value = m.review || "";
           document.getElementById("f_spoilers").value = m.spoilers || "";
@@ -1217,10 +1010,7 @@
       const editId = document.getElementById("editId").value;
       const titleVal = document.getElementById("f_title").value.trim();
       const yearVal = Number(document.getElementById("f_year").value);
-      let posterVal = document.getElementById("f_poster").value.trim();
-      if (!posterVal) {
-        posterVal = (await fetchWikiPoster(titleVal, yearVal)) || window.generateVaultFallbackPoster(titleVal, yearVal);
-      }
+      let posterVal = document.getElementById("f_poster").value.trim() || window.generateVaultFallbackPoster(titleVal, yearVal);
 
       const payload = {
         title: titleVal,
@@ -1236,8 +1026,6 @@
         crew: document.getElementById("f_crew").value.trim(),
         director: document.getElementById("f_director").value.trim(),
         poster: posterVal,
-        screenplay: document.getElementById("f_screenplay").value.trim(),
-        bgm: document.getElementById("f_bgm").value.trim(),
         verdict: document.getElementById("f_verdict").value.trim(),
         review: document.getElementById("f_review").value.trim(),
         spoilers: document.getElementById("f_spoilers").value.trim(),
@@ -1246,31 +1034,22 @@
       };
 
       if (db && isAdmin) {
-        try {
-          if (editId && !editId.startsWith("sample-") && editId !== "ramayana-2026") {
-            await updateDoc(doc(db, "movies", editId), payload);
-          } else {
-            await addDoc(collection(db, "movies"), payload);
-          }
-        } catch (err) {
-          alert("Error saving to Firebase: " + err.message);
-          return;
+        if (editId && !editId.startsWith("sample-") && editId !== "ramayana-2026") {
+          await updateDoc(doc(db, "movies", editId), payload);
+        } else {
+          await addDoc(collection(db, "movies"), payload);
         }
       } else {
-        if (editId) {
-          movies = movies.map(m => m.id === editId ? { ...payload, id: editId } : m);
-        } else {
-          movies.unshift({ ...payload, id: "local-" + Date.now() });
-        }
+        if (editId) movies = movies.map(m => m.id === editId ? { ...payload, id: editId } : m);
+        else movies.unshift({ ...payload, id: "local-" + Date.now() });
         localStorage.setItem("the_vault_movies_v5", JSON.stringify(movies));
         renderMovies();
       }
-
       closeEditorModal();
     };
 
     window.deleteMovie = async function (id) {
-      if (!confirm("Delete this entry from The Vault?")) return;
+      if (!confirm("Delete?")) return;
       if (db && isAdmin && !id.startsWith("sample-") && id !== "ramayana-2026") {
         await deleteDoc(doc(db, "movies", id));
       } else {
