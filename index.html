@@ -347,7 +347,7 @@
                 <input type="file" accept="image/*" class="hidden" onchange="handlePosterUpload(event)" />
               </label>
             </div>
-            <input id="f_poster" required type="text" oninput="document.getElementById('f_poster_preview').src = this.value"
+            <input id="f_poster" required type="text" oninput="previewPosterInput()"
                    placeholder="Auto-filled when you select a movie above, or paste link..."
                    class="w-full bg-black/50 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-vault-cream outline-none" />
           </div>
@@ -689,11 +689,62 @@
       }
     ];
 
+    // Safe rendering and local cache helpers.
+    window.escapeHTML = function (value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[ch]);
+    };
+
+    window.safePosterSource = function (value, title = "THE VAULT", year = "") {
+      const fallback = window.generateVaultFallbackPoster(title, year);
+      const raw = String(value || "").trim();
+      if (/^https?:\/\//i.test(raw)) return raw;
+      if (/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(raw)) return raw;
+      // The generated fallback is a controlled SVG data URL. Other SVG data URLs are rejected.
+      if (raw === fallback) return fallback;
+      return fallback;
+    };
+
+    window.readLocalJSON = function (key, fallback) {
+      try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+      } catch (error) {
+        console.warn(`Unable to read local cache '${key}':`, error);
+        return fallback;
+      }
+    };
+
+    window.persistMoviesCache = function () {
+      try {
+        localStorage.setItem("the_vault_movies_v6", JSON.stringify(window.movies));
+      } catch (error) {
+        console.warn("Unable to save the local movie cache:", error);
+      }
+    };
+
     window.movies = [...window.DEFAULT_MOVIES];
-    window.isAdmin = localStorage.getItem("the_vault_demo_admin") === "true";
+    window.isAdmin = false; // Admin access is granted only by verified Firebase Google authentication.
     window.currentTypeFilter = "all";
     window.currentMoodFilter = "all";
     window.grasperCacheResults = [];
+    window.sharedRatingStats = {};
+    window.currentRatingUserId = null;
+    window.currentOpenMovieId = null;
+    window.deletedDefaultIds = new Set(window.readLocalJSON("vault_deleted_defaults_v1", []));
+
+    // Restore the last local view immediately, before Firebase finishes loading.
+    const cachedMovies = window.readLocalJSON("the_vault_movies_v6", []);
+    if (Array.isArray(cachedMovies)) {
+      const defaultIds = new Set(window.DEFAULT_MOVIES.map(movie => movie.id));
+      const cachedById = new Map(cachedMovies.filter(movie => movie && movie.id).map(movie => [movie.id, movie]));
+      const restoredDefaults = window.DEFAULT_MOVIES
+        .filter(movie => !window.deletedDefaultIds.has(movie.id))
+        .map(movie => ({ ...movie, ...(cachedById.get(movie.id) || {}) }));
+      const cachedExtras = cachedMovies.filter(movie => movie && movie.id && !defaultIds.has(movie.id));
+      window.movies = [...restoredDefaults, ...cachedExtras];
+    }
 
     function getTierStyle(tier) {
       switch (tier) {
@@ -704,109 +755,107 @@
       }
     }
 
-    // Viewer Fractional 5-Vault Rating Helpers
+    // Audience scores combine the seeded starting totals with votes stored in Firestore.
     function getViewerStats(movie) {
-      const localVotes = JSON.parse(localStorage.getItem("vault_viewer_votes_v2") || "{}");
-      const userVote = localVotes[movie.id] ? parseFloat(localVotes[movie.id]) : null;
-      const baseSum = Number(movie.viewerRatingSum) || (window.normalizeRating(movie.rating) * 14);
-      const baseCount = Number(movie.viewerRatingCount) || 14;
-      const totalSum = userVote ? baseSum + userVote : baseSum;
-      const totalCount = userVote ? baseCount + 1 : baseCount;
-      const avg = totalSum / totalCount;
+      const shared = window.sharedRatingStats[movie.id] || { sum: 0, count: 0, votesByUser: {} };
+      const baseSum = Number.isFinite(Number(movie.viewerRatingSum)) ? Number(movie.viewerRatingSum) : 0;
+      const baseCount = Number.isFinite(Number(movie.viewerRatingCount)) ? Number(movie.viewerRatingCount) : 0;
+      const sharedSum = Number(shared.sum) || 0;
+      const sharedCount = Number(shared.count) || 0;
+      const totalSum = baseSum + sharedSum;
+      const totalCount = baseCount + sharedCount;
+      const userVote = window.currentRatingUserId && shared.votesByUser
+        ? (shared.votesByUser[window.currentRatingUserId] ?? null)
+        : null;
+      const avg = totalCount > 0 ? totalSum / totalCount : window.normalizeRating(movie.rating);
       return { avg, avgFormatted: window.formatVaultScore(avg), count: totalCount, userVote };
     }
 
-    window.submitViewerVaultRating = function (movieId, vaultScore) {
+    window.submitViewerVaultRating = async function (movieId, vaultScore) {
       const score = window.normalizeRating(vaultScore);
-      const localVotes = JSON.parse(localStorage.getItem("vault_viewer_votes_v2") || "{}");
-      localVotes[movieId] = score;
-      localStorage.setItem("vault_viewer_votes_v2", JSON.stringify(localVotes));
-      window.openDetailModal(movieId);
-      window.renderMovies();
+      if (!window.currentRatingUserId || typeof window.saveSharedViewerRating !== "function") {
+        alert("Audience ratings are temporarily unavailable. Please try again after the site connects to the database.");
+        return;
+      }
+      try {
+        await window.saveSharedViewerRating(movieId, score);
+        window.openDetailModal(movieId);
+        window.renderMovies();
+      } catch (error) {
+        console.error("Unable to save audience rating:", error);
+        alert("Your rating could not be saved. Please try again.");
+      }
     };
 
-    // Main UI Renderer
+    // Main UI Renderer. All data-originated text is escaped before entering HTML.
     window.renderMovies = function () {
+      const esc = window.escapeHTML;
       const searchEl = document.getElementById("searchInput");
-      const search = (searchEl ? searchEl.value : "").toLowerCase();
+      const search = (searchEl ? searchEl.value : "").toLowerCase().trim();
       const lang = document.getElementById("langFilter").value;
       const tier = document.getElementById("tierFilter").value;
-
-      const featured = window.movies.find(m => m.featured) || window.movies[0];
+      const featured = window.movies.find(movie => movie.featured) || window.movies[0];
       const heroEl = document.getElementById("heroSection");
 
       if (featured && window.currentTypeFilter === "all" && window.currentMoodFilter === "all" && !search && lang === "all" && tier === "all") {
-        const posterSrc = featured.poster || window.generateVaultFallbackPoster(featured.title, featured.year);
-        const safeFeaturedTitle = String(featured.title || "").replace(/'/g, "");
+        const posterSrc = esc(window.safePosterSource(featured.poster, featured.title, featured.year));
+        const featuredId = esc(featured.id);
         const fScore = window.normalizeRating(featured.rating);
-
         heroEl.classList.remove("hidden");
         heroEl.innerHTML = `
-          <div onclick="openDetailModal('${featured.id}')" class="cursor-pointer rounded-3xl overflow-hidden liquid-glass grid grid-cols-1 md:grid-cols-12 group">
+          <div data-open-movie="${featuredId}" class="cursor-pointer rounded-3xl overflow-hidden liquid-glass grid grid-cols-1 md:grid-cols-12 group">
             <div class="md:col-span-4 lg:col-span-3 relative h-64 sm:h-80 md:h-auto bg-black/50 overflow-hidden">
-              <img src="${posterSrc}" alt="${featured.title}" referrerpolicy="no-referrer"
-                   onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeFeaturedTitle}', '${featured.year}');"
+              <img src="${posterSrc}" alt="${esc(featured.title)}" referrerpolicy="no-referrer"
+                   onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('THE VAULT', '');"
                    class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
               <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider liquid-pill-active">Featured Review</span>
             </div>
-
             <div class="md:col-span-8 lg:col-span-9 p-5 sm:p-7 lg:p-8 flex flex-col justify-between">
               <div>
                 <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2.5">
-                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getTierStyle(featured.tier)}">${featured.tier}</span>
-                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold liquid-pill text-vault-cream">${featured.language}</span>
-                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold liquid-pill text-vault-muted">${featured.mood}</span>
-                  ${featured.platform ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold liquid-pill text-vault-muted">🍿 ${featured.platform}</span>` : ''}
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getTierStyle(featured.tier)}">${esc(featured.tier)}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold liquid-pill text-vault-cream">${esc(featured.language)}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold liquid-pill text-vault-muted">${esc(featured.mood)}</span>
+                  ${featured.platform ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold liquid-pill text-vault-muted">🍿 ${esc(featured.platform)}</span>` : ""}
                 </div>
-
                 <h1 class="font-display font-black text-2xl sm:text-3xl lg:text-4xl text-vault-cream tracking-tight">
-                  ${featured.title} <span class="text-vault-muted font-medium text-lg sm:text-xl">(${featured.year})</span>
+                  ${esc(featured.title)} <span class="text-vault-muted font-medium text-lg sm:text-xl">(${esc(featured.year)})</span>
                 </h1>
-
-                <p class="text-vault-cream/90 text-xs sm:text-sm font-medium mt-2 line-clamp-2 italic">"${featured.verdict}"</p>
-
+                <p class="text-vault-cream/90 text-xs sm:text-sm font-medium mt-2 line-clamp-2 italic">"${esc(featured.verdict)}"</p>
                 ${featured.synopsis ? `
                 <div class="mt-3 p-3 rounded-2xl bg-black/35 border border-white/10">
                   <span class="inline-block px-1.5 py-0.5 rounded bg-vault-imdb text-black font-extrabold text-[10px] uppercase tracking-wider mr-1.5">IMDb Synopsis</span>
-                  <span class="text-xs text-vault-cream/80 line-clamp-2">${featured.synopsis}</span>
-                </div>` : ''}
+                  <span class="text-xs text-vault-cream/80 line-clamp-2">${esc(featured.synopsis)}</span>
+                </div>` : ""}
               </div>
-
               <div class="mt-4 pt-3.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                   ${window.renderVaultMeterHTML(fScore, "w-6 h-6 sm:w-7 sm:h-7")}
                   <span class="font-display font-black text-lg sm:text-xl text-vault-cream">${window.formatVaultScore(fScore)} <span class="text-xs text-vault-muted font-normal">/ 5 Vaults</span></span>
                 </div>
-                <span class="text-xs sm:text-sm font-bold text-vault-redLight group-hover:translate-x-1 transition inline-flex items-center gap-1">
-                  Open Review & Rate &rarr;
-                </span>
+                <span class="text-xs sm:text-sm font-bold text-vault-redLight group-hover:translate-x-1 transition inline-flex items-center gap-1">Open Review & Rate &rarr;</span>
               </div>
             </div>
-          </div>
-        `;
+          </div>`;
       } else {
         heroEl.classList.add("hidden");
+        heroEl.innerHTML = "";
       }
 
-      const filtered = window.movies.filter(m => {
-        const matchesType = window.currentTypeFilter === "all" || m.type === window.currentTypeFilter;
-        const matchesMood = window.currentMoodFilter === "all" || m.mood === window.currentMoodFilter;
-        const matchesLang = lang === "all" || m.language === lang;
-        const matchesTier = tier === "all" || m.tier === tier;
-        const matchesSearch = !search ||
-          m.title.toLowerCase().includes(search) ||
-          (m.director && m.director.toLowerCase().includes(search)) ||
-          (m.cast && m.cast.toLowerCase().includes(search)) ||
-          (m.verdict && m.verdict.toLowerCase().includes(search)) ||
-          (m.language && m.language.toLowerCase().includes(search)) ||
-          (m.mood && m.mood.toLowerCase().includes(search));
+      const filtered = window.movies.filter(movie => {
+        const matchesType = window.currentTypeFilter === "all" || movie.type === window.currentTypeFilter;
+        const matchesMood = window.currentMoodFilter === "all" || movie.mood === window.currentMoodFilter;
+        const matchesLang = lang === "all" || movie.language === lang;
+        const matchesTier = tier === "all" || movie.tier === tier;
+        const haystack = [movie.title, movie.director, movie.cast, movie.verdict, movie.language, movie.mood]
+          .map(value => String(value || "").toLowerCase());
+        const matchesSearch = !search || haystack.some(value => value.includes(search));
         return matchesType && matchesMood && matchesLang && matchesTier && matchesSearch;
       });
 
       const grid = document.getElementById("moviesGrid");
       const empty = document.getElementById("emptyState");
-
       if (filtered.length === 0) {
         grid.innerHTML = "";
         empty.classList.remove("hidden");
@@ -814,50 +863,43 @@
       }
       empty.classList.add("hidden");
 
-      grid.innerHTML = filtered.map(m => {
-        const posterSrc = m.poster || window.generateVaultFallbackPoster(m.title, m.year);
-        const safeTitle = String(m.title || "").replace(/'/g, "");
-        const score = window.normalizeRating(m.rating);
-
+      grid.innerHTML = filtered.map(movie => {
+        const posterSrc = esc(window.safePosterSource(movie.poster, movie.title, movie.year));
+        const score = window.normalizeRating(movie.rating);
         return `
-        <article onclick="openDetailModal('${m.id}')" class="liquid-card cursor-pointer rounded-2xl overflow-hidden flex flex-col">
+        <article data-open-movie="${esc(movie.id)}" class="liquid-card cursor-pointer rounded-2xl overflow-hidden flex flex-col">
           <div class="relative poster-aspect w-full overflow-hidden bg-black/60">
-            <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer" loading="lazy"
-                 onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeTitle}', '${m.year}');"
+            <img src="${posterSrc}" alt="${esc(movie.title)}" referrerpolicy="no-referrer" loading="lazy"
+                 onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('THE VAULT', '');"
                  class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30"></div>
-
             <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase liquid-pill text-vault-cream">${m.language}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase liquid-pill text-vault-cream">${esc(movie.language)}</span>
             </div>
-
             <div class="absolute top-2.5 right-2.5 liquid-pill bg-black/75 border-vault-red/60 rounded-full px-2.5 py-0.5 flex items-center gap-1">
               <span class="font-display font-black text-vault-cream text-xs sm:text-sm">${window.formatVaultScore(score)}</span>
               <span class="text-[9px] text-vault-muted">/5</span>
             </div>
-
             <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getTierStyle(m.tier)} truncate">${m.tier}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getTierStyle(movie.tier)} truncate">${esc(movie.tier)}</span>
             </div>
           </div>
-
           <div class="p-3.5 sm:p-4 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between text-[10px] sm:text-xs text-vault-muted mb-1">
-                <span class="truncate pr-1">${m.mood}</span>
-                <span>${m.year}</span>
+                <span class="truncate pr-1">${esc(movie.mood)}</span>
+                <span>${esc(movie.year)}</span>
               </div>
-              <h3 class="font-display font-bold text-sm sm:text-lg text-vault-cream leading-snug line-clamp-1">${m.title}</h3>
-              <p class="text-[11px] sm:text-xs text-vault-cream/75 mt-1 line-clamp-2 italic">"${m.verdict}"</p>
+              <h3 class="font-display font-bold text-sm sm:text-lg text-vault-cream leading-snug line-clamp-1">${esc(movie.title)}</h3>
+              <p class="text-[11px] sm:text-xs text-vault-cream/75 mt-1 line-clamp-2 italic">"${esc(movie.verdict)}"</p>
             </div>
-
             <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
               ${window.renderVaultMeterHTML(score, "w-4 h-4")}
               <span class="text-[11px] text-vault-redLight font-bold">Unlock &rarr;</span>
             </div>
           </div>
-        </article>
-      `}).join("");
+        </article>`;
+      }).join("");
     };
 
     window.setTypeFilter = function (type) {
@@ -883,53 +925,44 @@
 
     window.resetFilters = function () {
       document.getElementById("searchInput").value = "";
-      const mob = document.getElementById("mobileSearchInput");
-      if (mob) mob.value = "";
+      const mobile = document.getElementById("mobileSearchInput");
+      if (mobile) mobile.value = "";
       document.getElementById("langFilter").value = "all";
       document.getElementById("tierFilter").value = "all";
       window.setTypeFilter("all");
       window.setMoodFilter("all");
     };
 
-    // Detail Modal with Fractional 5-Vault Meter + Viewer Fractional Slider & Quick-Tap
+    // Detail modal with a shared, per-user Firestore rating.
     window.openDetailModal = function (id) {
-      const m = window.movies.find(item => item.id === id);
-      if (!m) return;
-
-      const posterSrc = m.poster || window.generateVaultFallbackPoster(m.title, m.year);
-      const safeModalTitle = String(m.title || "").replace(/'/g, "");
-      const score = window.normalizeRating(m.rating);
-      const viewer = getViewerStats(m);
-      const activeViewerVal = viewer.userVote !== null ? viewer.userVote : viewer.avg;
-
-      const tweetText = encodeURIComponent(`🎬 ${m.title} (${m.year}) — ${window.formatVaultScore(score)}/5 Vaults (${m.tier})\n\n"${m.verdict}"\n\nvia @TheVaultCertify https://thevault.rest`);
-      const xIntentUrl = `https://x.com/intent/tweet?text=${tweetText}`;
-
+      const movie = window.movies.find(item => item.id === id);
+      if (!movie) return;
+      const esc = window.escapeHTML;
+      const posterSrc = esc(window.safePosterSource(movie.poster, movie.title, movie.year));
+      const movieId = esc(movie.id);
+      const score = window.normalizeRating(movie.rating);
+      const viewer = getViewerStats(movie);
+      const activeViewerVal = viewer.userVote !== null ? viewer.userVote : (viewer.count > 0 ? viewer.avg : score);
+      const tweetText = encodeURIComponent(`🎬 ${movie.title} (${movie.year}) — ${window.formatVaultScore(score)}/5 Vaults (${movie.tier})\n\n"${movie.verdict}"\n\nvia @TheVaultCertify https://thevault.rest`);
+      const xIntentUrl = esc(`https://x.com/intent/tweet?text=${tweetText}`);
       const modal = document.getElementById("detailModal");
       const content = document.getElementById("detailModalContent");
+      window.currentOpenMovieId = movie.id;
 
       content.innerHTML = `
         <div class="relative p-5 sm:p-7 bg-white/[0.03] border-b border-white/10 flex flex-col sm:flex-row gap-5 items-start">
           <button onclick="closeDetailModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full liquid-pill text-vault-cream hover:bg-vault-red transition flex items-center justify-center text-lg">&times;</button>
-
-          <img src="${posterSrc}" alt="${m.title}" referrerpolicy="no-referrer"
-               onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('${safeModalTitle}', '${m.year}');"
+          <img src="${posterSrc}" alt="${esc(movie.title)}" referrerpolicy="no-referrer"
+               onerror="this.onerror=null; this.src=window.generateVaultFallbackPoster('THE VAULT', '');"
                class="w-28 sm:w-36 poster-aspect object-cover rounded-2xl border border-white/15 shadow-2xl shrink-0" />
-
           <div class="flex-1 pr-6">
             <div class="flex flex-wrap gap-1.5 mb-2">
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${getTierStyle(m.tier)}">${m.tier}</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold liquid-pill text-vault-cream">${m.language}</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold liquid-pill text-vault-muted">${m.mood}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${getTierStyle(movie.tier)}">${esc(movie.tier)}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold liquid-pill text-vault-cream">${esc(movie.language)}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold liquid-pill text-vault-muted">${esc(movie.mood)}</span>
             </div>
-
-            <h2 class="font-display font-black text-2xl sm:text-3xl text-vault-cream leading-tight">
-              ${m.title} <span class="text-vault-muted font-normal text-lg">(${m.year})</span>
-            </h2>
-
-            ${m.director ? `<p class="text-xs text-vault-muted mt-1">Directed by <strong class="text-vault-cream">${m.director}</strong> ${m.platform ? `• <strong class="text-vault-cream">${m.platform}</strong>` : ''}</p>` : ''}
-
-            <!-- Critic Fractional 5-Vault Score -->
+            <h2 class="font-display font-black text-2xl sm:text-3xl text-vault-cream leading-tight">${esc(movie.title)} <span class="text-vault-muted font-normal text-lg">(${esc(movie.year)})</span></h2>
+            ${movie.director ? `<p class="text-xs text-vault-muted mt-1">Directed by <strong class="text-vault-cream">${esc(movie.director)}</strong> ${movie.platform ? `• <strong class="text-vault-cream">${esc(movie.platform)}</strong>` : ""}</p>` : ""}
             <div class="mt-4 inline-flex flex-wrap items-center gap-3 liquid-pill px-4 py-2.5 rounded-2xl">
               ${window.renderVaultMeterHTML(score, "w-7 h-7")}
               <div>
@@ -939,125 +972,80 @@
             </div>
           </div>
         </div>
-
         <div class="p-5 sm:p-7 space-y-5">
-          ${m.synopsis ? `
-          <div class="p-4 rounded-2xl liquid-glass">
-            <div class="flex items-center gap-2 mb-1.5">
-              <span class="px-2 py-0.5 rounded bg-vault-imdb text-black font-extrabold text-[10px] uppercase tracking-wider">IMDb Synopsis</span>
-              <span class="text-[11px] text-vault-muted font-semibold">Official Premise</span>
-            </div>
-            <p class="text-xs sm:text-sm text-vault-cream/90 leading-relaxed">${m.synopsis}</p>
-          </div>` : ''}
-
-          ${(m.cast || m.crew) ? `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            ${m.cast ? `
-            <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-vault-redLight block mb-1">🎭 Cast & Characters</span>
-              <p class="text-xs text-vault-cream/90 leading-relaxed">${m.cast}</p>
-            </div>` : ''}
-            ${m.crew ? `
-            <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-vault-redLight block mb-1">🎬 Crew & Production</span>
-              <p class="text-xs text-vault-cream/90 leading-relaxed">${m.crew}</p>
-            </div>` : ''}
-          </div>` : ''}
-
-          <div class="p-4 rounded-2xl bg-black/45 border-l-4 border-vault-red">
-            <p class="text-[10px] uppercase font-bold tracking-wider text-vault-redLight mb-1">The Vault Verdict</p>
-            <p class="text-vault-cream font-semibold text-sm sm:text-base">"${m.verdict}"</p>
-          </div>
-
-          ${(m.screenplay || m.bgm) ? `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            ${m.screenplay ? `
-            <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-              <span class="text-[11px] font-bold uppercase text-vault-muted block mb-1">✍️ Screenplay & Pacing</span>
-              <p class="text-xs sm:text-sm text-vault-cream">${m.screenplay}</p>
-            </div>` : ''}
-            ${m.bgm ? `
-            <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-              <span class="text-[11px] font-bold uppercase text-vault-muted block mb-1">🎵 Sound, Score & Action</span>
-              <p class="text-xs sm:text-sm text-vault-cream">${m.bgm}</p>
-            </div>` : ''}
-          </div>` : ''}
-
-          <div>
-            <h4 class="font-display font-bold text-base sm:text-lg text-vault-cream mb-2">Full Review</h4>
-            <div class="text-xs sm:text-sm text-vault-cream/90 leading-relaxed whitespace-pre-line space-y-3">${m.review}</div>
-          </div>
-
-          ${m.spoilers ? `
-          <div class="border border-white/15 rounded-2xl overflow-hidden">
-            <button onclick="document.getElementById('spoilerBox').classList.toggle('hidden')" class="w-full px-4 py-2.5 bg-black/50 text-left flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-400">
-              <span>⚠️ Unlock Spoiler Vault</span>
-              <span>Tap to Toggle</span>
-            </button>
-            <div id="spoilerBox" class="hidden p-4 bg-black/65 text-xs sm:text-sm text-vault-cream/85 border-t border-white/10 whitespace-pre-line">${m.spoilers}</div>
-          </div>` : ''}
-
-          <!-- INTERACTIVE VIEWER FRACTIONAL 5-VAULT RATING METER -->
+          ${movie.synopsis ? `<div class="p-4 rounded-2xl liquid-glass"><div class="flex items-center gap-2 mb-1.5"><span class="px-2 py-0.5 rounded bg-vault-imdb text-black font-extrabold text-[10px] uppercase tracking-wider">IMDb Synopsis</span><span class="text-[11px] text-vault-muted font-semibold">Official Premise</span></div><p class="text-xs sm:text-sm text-vault-cream/90 leading-relaxed">${esc(movie.synopsis)}</p></div>` : ""}
+          ${(movie.cast || movie.crew) ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            ${movie.cast ? `<div class="p-3.5 rounded-2xl bg-black/40 border border-white/10"><span class="text-[11px] font-bold uppercase tracking-wider text-vault-redLight block mb-1">🎭 Cast & Characters</span><p class="text-xs text-vault-cream/90 leading-relaxed">${esc(movie.cast)}</p></div>` : ""}
+            ${movie.crew ? `<div class="p-3.5 rounded-2xl bg-black/40 border border-white/10"><span class="text-[11px] font-bold uppercase tracking-wider text-vault-redLight block mb-1">🎬 Crew & Production</span><p class="text-xs text-vault-cream/90 leading-relaxed">${esc(movie.crew)}</p></div>` : ""}
+          </div>` : ""}
+          <div class="p-4 rounded-2xl bg-black/45 border-l-4 border-vault-red"><p class="text-[10px] uppercase font-bold tracking-wider text-vault-redLight mb-1">The Vault Verdict</p><p class="text-vault-cream font-semibold text-sm sm:text-base">"${esc(movie.verdict)}"</p></div>
+          ${(movie.screenplay || movie.bgm) ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            ${movie.screenplay ? `<div class="p-3.5 rounded-2xl bg-black/40 border border-white/10"><span class="text-[11px] font-bold uppercase text-vault-muted block mb-1">✍️ Screenplay & Pacing</span><p class="text-xs sm:text-sm text-vault-cream">${esc(movie.screenplay)}</p></div>` : ""}
+            ${movie.bgm ? `<div class="p-3.5 rounded-2xl bg-black/40 border border-white/10"><span class="text-[11px] font-bold uppercase text-vault-muted block mb-1">🎵 Sound, Score & Action</span><p class="text-xs sm:text-sm text-vault-cream">${esc(movie.bgm)}</p></div>` : ""}
+          </div>` : ""}
+          <div><h4 class="font-display font-bold text-base sm:text-lg text-vault-cream mb-2">Full Review</h4><div class="text-xs sm:text-sm text-vault-cream/90 leading-relaxed whitespace-pre-line space-y-3">${esc(movie.review)}</div></div>
+          ${movie.spoilers ? `<div class="border border-white/15 rounded-2xl overflow-hidden"><button onclick="document.getElementById('spoilerBox').classList.toggle('hidden')" class="w-full px-4 py-2.5 bg-black/50 text-left flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-400"><span>⚠️ Unlock Spoiler Vault</span><span>Tap to Toggle</span></button><div id="spoilerBox" class="hidden p-4 bg-black/65 text-xs sm:text-sm text-vault-cream/85 border-t border-white/10 whitespace-pre-line">${esc(movie.spoilers)}</div></div>` : ""}
           <div class="p-4 sm:p-5 rounded-2xl liquid-glass space-y-3">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <span class="text-[11px] font-extrabold uppercase tracking-wider text-vault-redLight block">Audience Precision Vault Meter</span>
-                <h5 class="font-display font-bold text-base text-vault-cream">Rate this movie (Supports 0.25 steps like 3.25/5)</h5>
-                <p class="text-xs text-vault-muted mt-0.5">
-                  Audience Average: <strong class="text-vault-cream">${viewer.avgFormatted} / 5 Vaults</strong> (${viewer.count} ratings)
-                  ${viewer.userVote ? `<span class="text-vault-redLight font-bold ml-1">• Your Rating: ${window.formatVaultScore(viewer.userVote)}/5</span>` : ''}
+              <div><span class="text-[11px] font-extrabold uppercase tracking-wider text-vault-redLight block">Audience Precision Vault Meter</span><h5 class="font-display font-bold text-base text-vault-cream">Rate this movie (0.25-point steps)</h5>
+                <p class="text-xs text-vault-muted mt-0.5">Audience Average: <strong class="text-vault-cream">${esc(viewer.avgFormatted)} / 5 Vaults</strong> (${viewer.count} ratings)
+                  ${viewer.userVote !== null ? `<span class="text-vault-redLight font-bold ml-1">• Your Rating: ${window.formatVaultScore(viewer.userVote)}/5</span>` : ""}
                 </p>
               </div>
-              <div id="liveViewerVaultIcons" class="flex items-center gap-2">
-                ${window.renderVaultMeterHTML(activeViewerVal, "w-7 h-7 sm:w-8 sm:h-8")}
-                <span id="liveViewerScoreLabel" class="font-display font-black text-lg text-vault-cream">${window.formatVaultScore(activeViewerVal)}</span>
-              </div>
+              <div id="liveViewerVaultIcons" class="flex items-center gap-2">${window.renderVaultMeterHTML(activeViewerVal, "w-7 h-7 sm:w-8 sm:h-8")}<span id="liveViewerScoreLabel" class="font-display font-black text-lg text-vault-cream">${window.formatVaultScore(activeViewerVal)}</span></div>
             </div>
-
             <div class="flex items-center gap-3 pt-1">
-              <input type="range" min="0.5" max="5" step="0.25" value="${activeViewerVal}"
-                     oninput="document.getElementById('liveViewerVaultIcons').innerHTML = window.renderVaultMeterHTML(this.value, 'w-7 h-7 sm:w-8 sm:h-8') + '<span class=\\'font-display font-black text-lg text-vault-cream\\'>' + window.formatVaultScore(this.value) + '</span>'"
-                     onchange="submitViewerVaultRating('${m.id}', this.value)"
+              <input type="range" min="0.5" max="5" step="0.25" value="${activeViewerVal}" data-rating-slider="${movieId}"
                      class="flex-1 accent-vault-red cursor-pointer h-2 bg-black/60 rounded-lg" />
-              <div class="flex gap-1">
-                ${[1, 2, 3, 4, 5].map(v => `<button type="button" onclick="submitViewerVaultRating('${m.id}', ${v})" class="px-2 py-1 rounded-lg liquid-pill text-[11px] font-bold text-vault-cream">${v}</button>`).join("")}
-              </div>
+              <div class="flex gap-1">${[1, 2, 3, 4, 5].map(value => `<button type="button" data-quick-vote="${value}" data-rating-movie="${movieId}" class="px-2 py-1 rounded-lg liquid-pill text-[11px] font-bold text-vault-cream">${value}</button>`).join("")}</div>
             </div>
           </div>
-
           <div class="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
-              <a href="${xIntentUrl}" target="_blank" rel="noopener noreferrer"
-                 class="px-4 py-2 rounded-full liquid-pill text-xs font-bold text-vault-cream flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                <span>Share on X @TheVaultCertify</span>
+              <a href="${xIntentUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-full liquid-pill text-xs font-bold text-vault-cream flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span>Share on X @TheVaultCertify</span>
               </a>
-              <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer"
-                 class="px-4 py-2 rounded-full liquid-pill text-xs font-bold text-vault-cream flex items-center gap-1.5">
-                <span class="flex items-center -space-x-0.5">
-                  <span class="w-2 h-2 rounded-full bg-[#FF8000]"></span>
-                  <span class="w-2 h-2 rounded-full bg-[#00E054]"></span>
-                  <span class="w-2 h-2 rounded-full bg-[#40BCF4]"></span>
-                </span>
-                <span>Letterboxd</span>
-              </a>
+              <a href="https://boxd.it/9MowN" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-full liquid-pill text-xs font-bold text-vault-cream flex items-center gap-1.5"><span class="flex items-center -space-x-0.5"><span class="w-2 h-2 rounded-full bg-[#FF8000]"></span><span class="w-2 h-2 rounded-full bg-[#00E054]"></span><span class="w-2 h-2 rounded-full bg-[#40BCF4]"></span></span><span>Letterboxd</span></a>
             </div>
-
-            ${window.isAdmin ? `
-            <div class="flex items-center gap-2">
-              <button onclick="openEditorModal('${m.id}')" class="px-4 py-2 rounded-full liquid-pill text-xs font-bold text-vault-cream">✏️ Edit</button>
-              <button onclick="deleteMovie('${m.id}')" class="px-4 py-2 rounded-full bg-red-950/70 border border-red-700 text-xs font-bold text-red-200">🗑️ Delete</button>
-            </div>` : ''}
+            ${window.isAdmin ? `<div class="flex items-center gap-2"><button data-edit-movie="${movieId}" class="px-4 py-2 rounded-full liquid-pill text-xs font-bold text-vault-cream">✏️ Edit</button><button data-delete-movie="${movieId}" class="px-4 py-2 rounded-full bg-red-950/70 border border-red-700 text-xs font-bold text-red-200">🗑️ Delete</button></div>` : ""}
           </div>
-        </div>
-      `;
-
+        </div>`;
       modal.classList.remove("hidden");
     };
 
     window.closeDetailModal = function () {
       document.getElementById("detailModal").classList.add("hidden");
+      window.currentOpenMovieId = null;
     };
+
+    // Delegated handlers keep movie IDs out of inline JavaScript attributes.
+    document.getElementById("heroSection").addEventListener("click", event => {
+      const target = event.target.closest("[data-open-movie]");
+      if (target) window.openDetailModal(target.dataset.openMovie);
+    });
+    document.getElementById("moviesGrid").addEventListener("click", event => {
+      const target = event.target.closest("[data-open-movie]");
+      if (target) window.openDetailModal(target.dataset.openMovie);
+    });
+    const detailContentEl = document.getElementById("detailModalContent");
+    detailContentEl.addEventListener("click", event => {
+      const editButton = event.target.closest("[data-edit-movie]");
+      const deleteButton = event.target.closest("[data-delete-movie]");
+      const voteButton = event.target.closest("[data-quick-vote]");
+      if (editButton) window.openEditorModal(editButton.dataset.editMovie);
+      if (deleteButton) window.deleteMovie(deleteButton.dataset.deleteMovie);
+      if (voteButton) window.submitViewerVaultRating(voteButton.dataset.ratingMovie, voteButton.dataset.quickVote);
+    });
+    detailContentEl.addEventListener("input", event => {
+      const slider = event.target.closest("[data-rating-slider]");
+      if (!slider) return;
+      const icons = document.getElementById("liveViewerVaultIcons");
+      if (icons) icons.innerHTML = window.renderVaultMeterHTML(slider.value, "w-7 h-7 sm:w-8 sm:h-8") + `<span id="liveViewerScoreLabel" class="font-display font-black text-lg text-vault-cream">${window.formatVaultScore(slider.value)}</span>`;
+    });
+    detailContentEl.addEventListener("change", event => {
+      const slider = event.target.closest("[data-rating-slider]");
+      if (slider) window.submitViewerVaultRating(slider.dataset.ratingSlider, slider.value);
+    });
 
     // =========================================================================
     // AUTO IMDB + TMDB + WIKIPEDIA MOVIE DATA & POSTER GRASPER
@@ -1115,7 +1103,7 @@
       const resultsEl = document.getElementById("grasperResults");
       btn.textContent = "Grasping...";
       resultsEl.classList.remove("hidden");
-      resultsEl.innerHTML = `<p class="text-xs text-vault-muted py-2">Searching IMDb & TMDB archives for "${q}"...</p>`;
+      resultsEl.innerHTML = `<p class="text-xs text-vault-muted py-2">Searching IMDb &amp; TMDB archives for "${window.escapeHTML(q)}"...</p>`;
 
       const tmdbKey = localStorage.getItem("vault_tmdb_key") || "";
       let combined = [];
@@ -1174,14 +1162,14 @@
       resultsEl.innerHTML = combined.map((item, idx) => `
         <button type="button" onclick="selectGraspedMovie(${idx})"
                 class="w-full p-2 rounded-xl bg-black/55 hover:bg-vault-red/25 border border-white/10 hover:border-vault-red flex items-center gap-3 text-left transition">
-          <img src="${item.poster || window.generateVaultFallbackPoster(item.title, item.year)}"
+          <img src="${window.escapeHTML(window.safePosterSource(item.poster, item.title, item.year))}"
                referrerpolicy="no-referrer" class="w-10 h-14 object-cover rounded-lg shrink-0 bg-zinc-900" />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-vault-imdb text-black">${item.source}</span>
-              <p class="font-display font-bold text-xs sm:text-sm text-vault-cream truncate">${item.title} (${item.year})</p>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-vault-imdb text-black">${window.escapeHTML(item.source)}</span>
+              <p class="font-display font-bold text-xs sm:text-sm text-vault-cream truncate">${window.escapeHTML(item.title)} (${window.escapeHTML(item.year)})</p>
             </div>
-            <p class="text-[11px] text-vault-muted truncate mt-0.5">${item.cast || item.synopsis || 'Tap to auto-fill poster, synopsis, cast & crew'}</p>
+            <p class="text-[11px] text-vault-muted truncate mt-0.5">${window.escapeHTML(item.cast || item.synopsis || 'Tap to auto-fill poster, synopsis, cast & crew')}</p>
           </div>
           <span class="text-[11px] font-bold text-vault-redLight shrink-0">Select &rarr;</span>
         </button>
@@ -1198,7 +1186,7 @@
 
       if (item.poster) {
         document.getElementById("f_poster").value = item.poster;
-        document.getElementById("f_poster_preview").src = item.poster;
+        document.getElementById("f_poster_preview").src = window.safePosterSource(item.poster, item.title, item.year);
       }
       if (item.cast) {
         document.getElementById("f_cast").value = item.cast;
@@ -1245,7 +1233,7 @@
             const wikiImg = (page.original && page.original.source) || (page.thumbnail && page.thumbnail.source);
             if (wikiImg) {
               document.getElementById("f_poster").value = wikiImg;
-              document.getElementById("f_poster_preview").src = wikiImg;
+              document.getElementById("f_poster_preview").src = window.safePosterSource(wikiImg, item.title, item.year);
             }
           }
 
@@ -1278,29 +1266,54 @@
       if (!document.getElementById("f_poster").value) {
         const fb = window.generateVaultFallbackPoster(item.title, item.year);
         document.getElementById("f_poster").value = fb;
-        document.getElementById("f_poster_preview").src = fb;
+        document.getElementById("f_poster_preview").src = window.safePosterSource(fb, item.title, item.year);
       }
 
       document.getElementById("grasperResults").classList.add("hidden");
     };
 
+    window.previewPosterInput = function () {
+      const input = document.getElementById("f_poster");
+      const preview = document.getElementById("f_poster_preview");
+      const title = document.getElementById("f_title").value || "THE VAULT";
+      const year = document.getElementById("f_year").value || "";
+      preview.src = window.safePosterSource(input.value, title, year);
+    };
+
     window.handlePosterUpload = function (event) {
-      const file = event.target.files[0];
+      const file = event.target.files && event.target.files[0];
       if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file.");
+        event.target.value = "";
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Please choose an image smaller than 10 MB.");
+        event.target.value = "";
+        return;
+      }
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onerror = () => alert("Unable to read that image. Please try another file.");
+      reader.onload = function (loadEvent) {
         const img = new Image();
+        img.onerror = () => alert("That image could not be decoded. Please try another image.");
         img.onload = function () {
           const canvas = document.createElement("canvas");
-          const scale = Math.min(1, 500 / img.width);
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.84);
+          const scale = Math.min(1, 350 / img.width, 525 / img.height);
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const context = canvas.getContext("2d");
+          if (!context) {
+            alert("Your browser could not process this image.");
+            return;
+          }
+          context.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.76);
           document.getElementById("f_poster").value = dataUrl;
           document.getElementById("f_poster_preview").src = dataUrl;
         };
-        img.src = e.target.result;
+        img.src = loadEvent.target.result;
       };
       reader.readAsDataURL(file);
     };
@@ -1332,7 +1345,7 @@
           document.getElementById("f_crew").value = m.crew || "";
           document.getElementById("f_director").value = m.director || "";
           document.getElementById("f_poster").value = m.poster || "";
-          if (m.poster) document.getElementById("f_poster_preview").src = m.poster;
+          if (m.poster) document.getElementById("f_poster_preview").src = window.safePosterSource(m.poster, m.title, m.year);
           document.getElementById("f_screenplay").value = m.screenplay || "";
           document.getElementById("f_bgm").value = m.bgm || "";
           document.getElementById("f_verdict").value = m.verdict || "";
@@ -1348,39 +1361,38 @@
       document.getElementById("editorModal").classList.add("hidden");
     };
 
-    // Hydrate Posters for Default Movies via IMDb Suggestion API + Wikipedia
+    // Hydrate only built-in entries; do not overwrite user-created/cloud movies.
     async function hydrateDefaultPosters() {
-      const posterCache = JSON.parse(localStorage.getItem("vault_poster_cache_v6") || "{}");
+      const posterCache = window.readLocalJSON("vault_poster_cache_v6", {});
       let changed = false;
-
-      for (const m of window.movies) {
-        if (!m.poster) {
-          const key = `${m.title}_${m.year}`.toLowerCase();
-          if (posterCache[key]) {
-            m.poster = posterCache[key];
-            changed = true;
-            continue;
-          }
-          const imdbRes = await fetchImdbSuggestions(`${m.title} ${m.year}`);
-          if (imdbRes.length > 0 && imdbRes[0].poster) {
-            m.poster = imdbRes[0].poster;
-            posterCache[key] = m.poster;
-            changed = true;
-          } else {
-            m.poster = window.generateVaultFallbackPoster(m.title, m.year);
-            changed = true;
-          }
+      for (const original of window.DEFAULT_MOVIES) {
+        const current = window.movies.find(movie => movie.id === original.id);
+        if (!current || current.poster) continue;
+        const key = `${original.title}_${original.year}`.toLowerCase();
+        let poster = posterCache[key] || "";
+        if (!poster) {
+          const imdbResults = await fetchImdbSuggestions(`${original.title} ${original.year}`);
+          poster = imdbResults.find(item => item.poster)?.poster || "";
+        }
+        if (!poster) poster = window.generateVaultFallbackPoster(original.title, original.year);
+        if (poster.startsWith("https://") || poster.startsWith("http://") || poster.startsWith("data:image/svg+xml")) {
+          posterCache[key] = poster;
+          window.movies = window.movies.map(movie => movie.id === original.id ? { ...movie, poster } : movie);
+          changed = true;
         }
       }
-      localStorage.setItem("vault_poster_cache_v6", JSON.stringify(posterCache));
-      if (changed) window.renderMovies();
+      try { localStorage.setItem("vault_poster_cache_v6", JSON.stringify(posterCache)); } catch (error) {}
+      if (changed) {
+        window.persistMoviesCache();
+        window.renderMovies();
+      }
     }
 
-    // Load saved local entries immediately so site works in 0ms
-    const savedLocal = localStorage.getItem("the_vault_movies_v6");
-    if (savedLocal) {
-      try { window.movies = JSON.parse(savedLocal); } catch (e) {}
-    }
+    // Fallback handler remains safe if Firebase's module scripts fail to load.
+    window.handleAdminAuth = function () {
+      alert("Admin sign-in is unavailable because Firebase could not be initialized. Please check your connection and Firebase configuration.");
+    };
+
     window.renderMovies();
     hydrateDefaultPosters();
   </script>
@@ -1388,8 +1400,14 @@
   <!-- ================= NON-BLOCKING FIREBASE CLOUD SYNC ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, signOut,
+      onAuthStateChanged, signInAnonymously
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc,
+      query, orderBy, setDoc, writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const ADMIN_EMAIL = "hunny070506@gmail.com";
     const firebaseConfig = {
@@ -1403,19 +1421,65 @@
 
     let db = null;
     let auth = null;
+    let cloudMovies = [];
+    let moviesSnapshotReady = false;
+    let deletionsSnapshotReady = false;
+    let anonSignInPending = false;
+    let deletedDefaultIds = new Set(window.deletedDefaultIds || []);
+
+    function setDbStatus(message) {
+      const badge = document.getElementById("dbStatusBadge");
+      if (badge) badge.textContent = message;
+    }
+
+    function isVerifiedAdmin() {
+      const user = auth?.currentUser;
+      return !!(db && user && !user.isAnonymous && user.email &&
+        user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && window.isAdmin);
+    }
 
     function updateAdminButtons() {
-      const addBtn = document.getElementById("addMovieBtn");
-      const authBtn = document.getElementById("adminAuthBtn");
-      if (window.isAdmin) {
-        addBtn.classList.remove("hidden");
-        addBtn.classList.add("inline-flex");
-        authBtn.textContent = "🔓 Sign Out";
-      } else {
-        addBtn.classList.add("hidden");
-        addBtn.classList.remove("inline-flex");
-        authBtn.textContent = "🔒 Admin";
+      const addButton = document.getElementById("addMovieBtn");
+      const authButton = document.getElementById("adminAuthBtn");
+      if (addButton) {
+        addButton.classList.toggle("hidden", !window.isAdmin);
+        addButton.classList.toggle("inline-flex", !!window.isAdmin);
       }
+      if (authButton) authButton.textContent = window.isAdmin ? "🔓 Sign Out" : "🔒 Admin";
+      window.renderMovies();
+    }
+
+    function applyCloudMovies() {
+      if (!moviesSnapshotReady || !deletionsSnapshotReady) return;
+      const builtInById = new Map(window.DEFAULT_MOVIES.map(movie => [movie.id, movie]));
+      const merged = cloudMovies.filter(movie => {
+        const builtIn = builtInById.get(movie.id);
+        return !(builtIn && deletedDefaultIds.has(builtIn.id));
+      });
+      const hasSameTitleAndYear = movie => merged.some(existing =>
+        String(existing.title || "").trim().toLowerCase() === String(movie.title || "").trim().toLowerCase()
+        && Number(existing.year) === Number(movie.year)
+      );
+      window.DEFAULT_MOVIES.forEach(defaultMovie => {
+        if (!deletedDefaultIds.has(defaultMovie.id)
+            && !merged.some(existing => existing.id === defaultMovie.id)
+            && !hasSameTitleAndYear(defaultMovie)) {
+          merged.push(defaultMovie);
+        }
+      });
+
+      // Preserve locally-created entries from older/offline versions, but do not duplicate
+      // entries that the previous version already wrote to Firestore under a different ID.
+      const cached = window.readLocalJSON("the_vault_movies_v6", []);
+      if (Array.isArray(cached)) {
+        cached.filter(movie => movie && String(movie.id || "").startsWith("local-")).forEach(movie => {
+          if (!merged.some(existing => existing.id === movie.id) && !hasSameTitleAndYear(movie)) merged.push(movie);
+        });
+      }
+      merged.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+      window.movies = merged;
+      window.deletedDefaultIds = new Set(deletedDefaultIds);
+      window.persistMoviesCache();
       window.renderMovies();
     }
 
@@ -1424,76 +1488,156 @@
       auth = getAuth(app);
       db = getFirestore(app);
 
-      onAuthStateChanged(auth, (user) => {
-        if (user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          window.isAdmin = true;
-        }
+      onAuthStateChanged(auth, user => {
+        const isAdmin = !!(user && !user.isAnonymous && user.email &&
+          user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+        window.isAdmin = isAdmin;
+        window.currentRatingUserId = user ? user.uid : null;
         updateAdminButtons();
+
+        // Anonymous Firebase accounts let ordinary visitors cast one editable vote per movie.
+        if (!user && !anonSignInPending) {
+          anonSignInPending = true;
+          signInAnonymously(auth)
+            .catch(error => {
+              console.warn("Anonymous sign-in unavailable; shared voting is disabled:", error);
+              window.currentRatingUserId = null;
+            })
+            .finally(() => { anonSignInPending = false; });
+        }
+
+        if (window.currentOpenMovieId && !document.getElementById("detailModal").classList.contains("hidden")) {
+          window.openDetailModal(window.currentOpenMovieId);
+        }
       });
 
-      const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
-      onSnapshot(q, (snapshot) => {
-        document.getElementById("dbStatusBadge").textContent = "🟢 Live Vault";
-        const cloudMovies = snapshot.docs.map(d => ({
-          ...d.data(),
-          id: d.id,
-          rating: window.normalizeRating(d.data().rating)
+      const moviesQuery = query(collection(db, "movies"), orderBy("createdAt", "desc"));
+      onSnapshot(moviesQuery, snapshot => {
+        cloudMovies = snapshot.docs.map(documentSnapshot => ({
+          ...documentSnapshot.data(),
+          id: documentSnapshot.id,
+          rating: window.normalizeRating(documentSnapshot.data().rating)
         }));
-
-        // Ensure Scene (2026) and Ramayana (2026) remain visible alongside cloud entries
-        const merged = [...cloudMovies];
-        window.DEFAULT_MOVIES.forEach(def => {
-          if (!merged.some(m => m.title && m.title.toLowerCase() === def.title.toLowerCase())) {
-            merged.push(def);
-          }
-        });
-        merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        window.movies = merged;
-        window.renderMovies();
-      }, () => {
-        document.getElementById("dbStatusBadge").textContent = "🟢 Local Vault";
+        moviesSnapshotReady = true;
+        setDbStatus("🟢 Live Vault");
+        applyCloudMovies();
+      }, error => {
+        console.error("Movie sync failed:", error);
+        setDbStatus("🟡 Local Vault");
       });
-    } catch (e) {
-      document.getElementById("dbStatusBadge").textContent = "🟢 Local Vault";
+
+      onSnapshot(collection(db, "deletedDefaults"), snapshot => {
+        deletedDefaultIds = new Set(snapshot.docs.map(documentSnapshot => documentSnapshot.id));
+        try { localStorage.setItem("vault_deleted_defaults_v1", JSON.stringify([...deletedDefaultIds])); } catch (error) {}
+        deletionsSnapshotReady = true;
+        applyCloudMovies();
+      }, error => {
+        console.error("Default deletion sync failed:", error);
+        setDbStatus("🟡 Sync issue");
+      });
+
+      onSnapshot(collection(db, "movieRatings"), snapshot => {
+        const totals = {};
+        snapshot.docs.forEach(documentSnapshot => {
+          const vote = documentSnapshot.data();
+          const score = Number(vote.score);
+          if (!vote.movieId || !vote.userId || !Number.isFinite(score) || score < 0.5 || score > 5) return;
+          if (!totals[vote.movieId]) totals[vote.movieId] = { sum: 0, count: 0, votesByUser: {} };
+          totals[vote.movieId].sum += score;
+          totals[vote.movieId].count += 1;
+          totals[vote.movieId].votesByUser[vote.userId] = score;
+        });
+        window.sharedRatingStats = totals;
+        window.currentRatingUserId = auth.currentUser ? auth.currentUser.uid : null;
+        window.renderMovies();
+        if (window.currentOpenMovieId && !document.getElementById("detailModal").classList.contains("hidden")) {
+          window.openDetailModal(window.currentOpenMovieId);
+        }
+      }, error => {
+        console.error("Audience rating sync failed:", error);
+      });
+
+      setDbStatus("🟡 Connecting…");
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      window.isAdmin = false;
+      window.currentRatingUserId = null;
+      setDbStatus("🟡 Local Vault");
+      updateAdminButtons();
     }
 
+    window.saveSharedViewerRating = async function (movieId, score) {
+      if (!db || !auth || !auth.currentUser) throw new Error("Rating service is not connected.");
+      const numericScore = Number(score);
+      if (!Number.isFinite(numericScore) || numericScore < 0.5 || numericScore > 5) {
+        throw new Error("Invalid rating value.");
+      }
+      const user = auth.currentUser;
+      const ratingId = `${movieId}_${user.uid}`;
+      await setDoc(doc(db, "movieRatings", ratingId), {
+        movieId: String(movieId),
+        userId: user.uid,
+        score: Math.round(numericScore * 4) / 4,
+        updatedAt: Date.now()
+      });
+    };
+
     window.handleAdminAuth = async function () {
-      if (!auth) {
-        window.isAdmin = !window.isAdmin;
-        localStorage.setItem("the_vault_demo_admin", window.isAdmin);
-        updateAdminButtons();
+      if (!auth || !db) {
+        alert("Firebase Authentication is unavailable. Check your internet connection and Firebase configuration.");
         return;
       }
-      if (auth.currentUser) {
-        await signOut(auth);
-        window.isAdmin = false;
-        localStorage.setItem("the_vault_demo_admin", "false");
-        updateAdminButtons();
-      } else {
+      if (isVerifiedAdmin()) {
         try {
-          const result = await signInWithPopup(auth, new GoogleAuthProvider());
-          if (result.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-            window.isAdmin = true;
-            updateAdminButtons();
-          } else {
-            alert("Signed in as " + result.user.email + " (not ADMIN_EMAIL).");
-            await signOut(auth);
-          }
-        } catch (err) {
-          // Fallback toggle if domain isn't added to Firebase Authorized Domains yet
-          window.isAdmin = !window.isAdmin;
-          localStorage.setItem("the_vault_demo_admin", window.isAdmin);
-          updateAdminButtons();
+          await signOut(auth);
+        } catch (error) {
+          console.error("Sign-out failed:", error);
+          alert("Could not sign out. Please try again.");
+        }
+        return;
+      }
+
+      try {
+        // signInWithPopup replaces an anonymous session directly; avoid a sign-out race
+        // that could start a second anonymous sign-in while the popup is opening.
+        const result = await signInWithPopup(auth, new GoogleAuthProvider());
+        const email = result.user.email || "";
+        if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+          alert(`Signed in as ${email || "an unknown account"}. This account is not authorized as the Vault administrator.`);
+          await signOut(auth);
+          return;
+        }
+        window.isAdmin = true;
+        updateAdminButtons();
+      } catch (error) {
+        console.error("Admin sign-in failed:", error);
+        window.isAdmin = false;
+        updateAdminButtons();
+        alert("Admin sign-in failed. Check that Google sign-in is enabled and this website's domain is listed under Firebase Authentication → Settings → Authorized domains.");
+        if (!auth.currentUser) {
+          signInAnonymously(auth).catch(anonError => console.warn("Anonymous sign-in unavailable:", anonError));
         }
       }
     };
 
-    window.saveMovie = async function (e) {
-      e.preventDefault();
-      const editId = document.getElementById("editId").value;
+    window.saveMovie = async function (event) {
+      event.preventDefault();
+      if (!isVerifiedAdmin()) {
+        alert("Only the authenticated Vault administrator can publish entries.");
+        return;
+      }
+
+      const editId = document.getElementById("editId").value.trim();
+      const existing = editId ? window.movies.find(movie => movie.id === editId) : null;
       const titleVal = document.getElementById("f_title").value.trim();
       const yearVal = Number(document.getElementById("f_year").value);
-      const posterVal = document.getElementById("f_poster").value.trim() || window.generateVaultFallbackPoster(titleVal, yearVal);
+      const posterInput = document.getElementById("f_poster").value.trim();
+      const posterVal = posterInput || window.generateVaultFallbackPoster(titleVal, yearVal);
+
+      if (!titleVal || !Number.isInteger(yearVal) || yearVal < 1888 || yearVal > 2200) {
+        alert("Enter a valid title and release year.");
+        return;
+      }
 
       const payload = {
         title: titleVal,
@@ -1515,40 +1659,82 @@
         review: document.getElementById("f_review").value.trim(),
         spoilers: document.getElementById("f_spoilers").value.trim(),
         featured: document.getElementById("f_featured").checked,
-        createdAt: Date.now()
+        createdAt: existing ? (Number(existing.createdAt) || Date.now()) : Date.now(),
+        updatedAt: Date.now()
       };
+      if (existing && Number.isFinite(Number(existing.viewerRatingSum))) payload.viewerRatingSum = Number(existing.viewerRatingSum);
+      if (existing && Number.isFinite(Number(existing.viewerRatingCount))) payload.viewerRatingCount = Number(existing.viewerRatingCount);
 
-      if (db && auth && auth.currentUser) {
-        try {
-          if (editId && !editId.startsWith("sample-") && editId !== "ramayana-2026" && editId !== "scene-2026") {
-            await updateDoc(doc(db, "movies", editId), payload);
-          } else {
-            await addDoc(collection(db, "movies"), payload);
-          }
-        } catch (err) {
-          alert("Saved locally (Cloud write error: " + err.message + ")");
+      const submitButton = document.querySelector('#movieForm button[type="submit"]');
+      if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Publishing…"; }
+      try {
+        let savedId;
+        if (editId && !editId.startsWith("local-")) {
+          // Stable document IDs let edits to built-in entries replace, rather than duplicate, them.
+          savedId = editId;
+          await setDoc(doc(db, "movies", savedId), payload, { merge: true });
+        } else {
+          const created = await addDoc(collection(db, "movies"), payload);
+          savedId = created.id;
         }
-      }
 
-      if (editId) {
-        window.movies = window.movies.map(m => m.id === editId ? { ...payload, id: editId } : m);
-      } else {
-        window.movies.unshift({ ...payload, id: "local-" + Date.now() });
+        if (editId) {
+          window.movies = window.movies.filter(movie => movie.id !== editId);
+        }
+        window.movies.unshift({ ...payload, id: savedId });
+        window.persistMoviesCache();
+        window.renderMovies();
+        window.closeEditorModal();
+      } catch (error) {
+        console.error("Movie publish failed:", error);
+        alert(`The entry was not published. ${error.message || "Please check your Firestore rules and connection, then try again."}`);
+      } finally {
+        if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Publish to The Vault"; }
       }
-      localStorage.setItem("the_vault_movies_v6", JSON.stringify(window.movies));
-      window.renderMovies();
-      window.closeEditorModal();
     };
 
     window.deleteMovie = async function (id) {
-      if (!confirm("Delete this entry from The Vault?")) return;
-      if (db && auth && auth.currentUser && !id.startsWith("sample-") && id !== "ramayana-2026" && id !== "scene-2026") {
-        try { await deleteDoc(doc(db, "movies", id)); } catch (e) {}
+      if (!isVerifiedAdmin()) {
+        alert("Only the authenticated Vault administrator can delete entries.");
+        return;
       }
-      window.movies = window.movies.filter(m => m.id !== id);
-      localStorage.setItem("the_vault_movies_v6", JSON.stringify(window.movies));
-      window.renderMovies();
-      window.closeDetailModal();
+      if (!confirm("Delete this entry from The Vault?")) return;
+      const movieToDelete = window.movies.find(movie => movie.id === id);
+      const defaultMatch = window.DEFAULT_MOVIES.find(movie => movie.id === id || (
+        movieToDelete && String(movie.title).toLowerCase() === String(movieToDelete.title).toLowerCase()
+        && Number(movie.year) === Number(movieToDelete.year)
+      ));
+      try {
+        const batch = writeBatch(db);
+        let hasCloudWrites = false;
+        if (!String(id).startsWith("local-")) {
+          batch.delete(doc(db, "movies", id));
+          hasCloudWrites = true;
+        }
+        if (defaultMatch) {
+          // A previous version may have stored an edited default under an auto-generated ID.
+          if (defaultMatch.id !== id) batch.delete(doc(db, "movies", defaultMatch.id));
+          batch.set(doc(db, "deletedDefaults", defaultMatch.id), {
+            movieId: defaultMatch.id,
+            title: defaultMatch.title,
+            deletedAt: Date.now()
+          });
+          hasCloudWrites = true;
+        }
+        if (hasCloudWrites) await batch.commit();
+        if (defaultMatch) {
+          deletedDefaultIds.add(defaultMatch.id);
+          window.deletedDefaultIds = new Set(deletedDefaultIds);
+          try { localStorage.setItem("vault_deleted_defaults_v1", JSON.stringify([...deletedDefaultIds])); } catch (error) {}
+        }
+        window.movies = window.movies.filter(movie => movie.id !== id);
+        window.persistMoviesCache();
+        window.renderMovies();
+        window.closeDetailModal();
+      } catch (error) {
+        console.error("Movie deletion failed:", error);
+        alert(`The entry was not deleted. ${error.message || "Check your Firestore rules and connection."}`);
+      }
     };
 
     updateAdminButtons();
