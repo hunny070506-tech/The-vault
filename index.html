@@ -36,12 +36,51 @@
 .genre-logo-editor small{display:block;color:var(--muted);font-size:.75rem;margin-top:.3rem}
 #titleLogoPreview:not([hidden]){width:auto!important;height:auto!important;max-width:min(100%,240px);max-height:59px;object-fit:contain!important;margin-top:.5rem}
 @media(max-width:760px){.front-copy .title-logo{max-height:90px}.front-review-copy .title-logo,.card h3 .title-logo{max-height:42px}}
+/* Fractional ratings and short editorial motion, in the original gold palette */
+.stars{gap:.12em;align-items:center;color:#a88357;vertical-align:middle;line-height:1}
+.star{display:inline-grid;width:1em;height:1em;color:#896e54;position:relative}
+.star svg{display:block;width:1em;height:1em;max-width:none}
+.star > .star-fill{position:absolute;inset:0 auto 0 0;overflow:hidden;width:var(--fill);color:#ffc975;filter:drop-shadow(0 0 3px #edab4150);animation:star-fill .43s cubic-bezier(.2,.8,.25,1) both;animation-delay:calc(var(--order)*56ms)}
+.star > .star-fill svg{width:1em;height:1em}
+@keyframes star-fill{from{width:0;opacity:.5}to{width:var(--fill);opacity:1}}
+.front-feature .front-copy,.front-review-copy{animation:vault-entry .44s cubic-bezier(.2,.8,.25,1) both}
+.front-feature .front-art{animation:vault-art .65s ease-out both}
+.front-feature .front-art img,.trailer-poster img{transition:transform .32s cubic-bezier(.2,.8,.25,1)}
+@media(hover:hover){.front-feature:hover .front-art img,.trailer-poster:hover img{transform:scale(1.025)}}
+@keyframes vault-entry{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes vault-art{from{opacity:.55}to{opacity:1}}
+.trailer-route-hidden{display:none!important}
+.trailers-page{padding:30px 0 55px;min-height:calc(100svh - 180px)}
+.trailers-mast{padding:clamp(18px,6vw,62px);margin-bottom:18px;border:1px solid var(--line);border-radius:8px;background:radial-gradient(ellipse at 20% 5%,#442c1c,transparent 68%),#1c1410;animation:vault-entry .45s ease-out both}
+.trailers-mast h1{font:normal clamp(3rem,9vw,6.25rem)/.98 var(--serif);letter-spacing:-.065em;margin:.24em 0}
+.trailers-mast p,.trailer-copy p{color:var(--muted)}
+.trailers-mast a,.trailer-copy a{display:inline-block;margin-top:.65rem;color:var(--gold);font-weight:750;font-size:.8rem}
+.trailer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.trailer-card{display:flex;flex-direction:column;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.trailer-feature{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.trailer-copy{padding:clamp(13px,3vw,32px);align-self:center;width:100%}
+.trailer-copy h2{font:normal clamp(1.45rem,3vw,2.35rem)/1.05 var(--serif);margin:.35em 0}
+.trailer-copy p{font-size:.75rem}
+.trailer-poster{position:relative;display:grid;place-items:center;overflow:hidden;padding:0;border:0;aspect-ratio:16/9;background:#1e140f;color:#23170d;width:100%}
+.trailer-poster img{position:absolute;width:100%;height:100%;object-fit:cover}
+.trailer-play{z-index:1;display:grid;place-items:center;border-radius:50%;min-width:46px;min-height:46px;padding-left:3px;color:#21150d;background:#f1bd69;box-shadow:0 3px 20px #0009}
+.trailer-dialog{width:min(860px,calc(100% - 22px));color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel);max-height:90dvh}
+.trailer-dialog::backdrop{background:#000c}
+.trailer-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.trailer-dialog h2{font:normal clamp(1.1rem,4vw,1.8rem) var(--serif)}
+.trailer-dialog iframe{width:100%;aspect-ratio:16/9;border:0;display:block;background:#000}
+.trailer-dialog>a{margin-top:10px}
+.mast nav .mobile-picks{display:none}
+.mast nav [aria-current="page"]{color:var(--gold)}
+@media(max-width:760px){.trailer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.trailer-feature{display:flex}.trailer-copy .kicker{letter-spacing:.1em}.mast-inner{gap:.35rem}.mast nav{gap:7px}.mast nav a{font-size:.68rem}.mast nav .picks-link .wide-picks{display:none}.mast nav .picks-link .mobile-picks{display:inline}}
+@media(max-width:355px){.trailer-grid{grid-template-columns:1fr}.mast nav .picks-link{display:none}}
+@media(prefers-reduced-motion:reduce){.star > .star-fill,.front-feature .front-copy,.front-review-copy,.front-feature .front-art,.trailers-mast{animation:none}.front-feature .front-art img,.trailer-poster img{transition:none}.front-feature:hover .front-art img,.trailer-poster:hover img{transform:none}}
 </style>
 </head><body>
 <a class="btn skip" href="#archive">Skip to films</a>
 <header class="mast"><div class="shell mast-inner">
 <a class="brand" href="#" onclick="resetFilters()"><img src="data:image/png;base64,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" alt="The Vault"><span>THE VAULT<small>FILM JOURNAL</small></span></a>
-<nav aria-label="Main navigation"><a class="nav-link" href="#archive" onclick="setTypeFilter('Review')">Reviews</a><a class="nav-link picks-link" href="#archive" onclick="setTypeFilter('Recommendation')">Weekend picks</a><a class="nav-link desktop" href="#stamps">Verdicts</a><a class="nav-link desktop" href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer">Follow on X ↗</a><button id="addMovieBtn" class="btn hidden" onclick="openEditorModal()">+ Add entry</button></nav>
+<nav aria-label="Main navigation"><a class="nav-link" href="#archive" onclick="setTypeFilter('Review')">Reviews</a><a class="nav-link picks-link" href="#archive" onclick="setTypeFilter('Recommendation')"><span class="wide-picks">Weekend picks</span><span class="mobile-picks">Picks</span></a><a class="nav-link" href="#trailers">Trailers</a><a class="nav-link desktop" href="#stamps">Verdicts</a><a class="nav-link desktop" href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer">Follow on X ↗</a><button id="addMovieBtn" class="btn hidden" onclick="openEditorModal()">+ Add entry</button></nav>
 </div></header>
 <main><section id="heroSection" class="hero shell" aria-label="Spotlight"></section>
 <section id="archive" class="archive shell" aria-labelledby="archiveHeading">
@@ -49,13 +88,22 @@
 <div class="toolbar">
 <input id="searchInput" type="search" placeholder="Search films, cast, or directors…" aria-label="Search films, cast, or directors">
 <select id="langFilter" aria-label="Language"></select>
-<select id="moodFilter" aria-label="Genre or mood"></select>
+<select id="moodFilter" aria-label="Genre"></select>
 <select id="tierFilter" aria-label="Verdict stamp"><option value="all">All stamps</option><option value="Certified Banger">Certified banger</option><option value="Locked in The Vault">Locked in the vault</option><option value="One-Time Watch">One time watch</option><option value="Skip">Avoid</option></select>
 </div>
 <div class="tabs" role="tablist" aria-label="Entry type"><button id="tab-all" role="tab" aria-selected="true" aria-controls="moviesGrid" onclick="setTypeFilter('all')">All films</button><button id="tab-Review" role="tab" aria-selected="false" aria-controls="moviesGrid" onclick="setTypeFilter('Review')">Reviews</button><button id="tab-Recommendation" role="tab" aria-selected="false" aria-controls="moviesGrid" onclick="setTypeFilter('Recommendation')">Weekend picks</button></div>
 <div id="moviesGrid" role="tabpanel" aria-labelledby="tab-all" class="grid-list"></div><div id="emptyState" class="empty hidden"><p>No films match those filters.</p><button class="btn secondary" onclick="resetFilters()">Clear filters</button></div>
 </section>
 <section id="stamps" class="shell legend" aria-labelledby="stampHeading"><div><div class="kicker">The final verdict</div><h2 id="stampHeading">Vault stamps</h2></div><div id="stampLegend" class="legend-items"></div></section>
+<section id="trailers" class="shell trailers-page" hidden aria-labelledby="trailers-heading">
+ <div class="trailers-mast"><div class="kicker">The Vault / Coming attractions</div><h1 id="trailers-heading">Trailer room</h1><p>Recent official trailers, handpicked from YouTube.</p><a class="text-btn" href="#archive">Back to the film archive ↗</a></div>
+ <div id="trailer-grid" class="trailer-grid"></div>
+</section>
+<dialog id="trailer-dialog" class="trailer-dialog" aria-labelledby="trailer-dialog-title">
+ <header><h2 id="trailer-dialog-title"></h2><form method="dialog"><button class="btn secondary" aria-label="Close trailer">×</button></form></header>
+ <div id="trailer-player"></div>
+ <a id="trailer-youtube" class="btn secondary" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
+</dialog>
 </main>
 <div id="detailModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="review-sheet" id="detailModalContent"></div></div>
   <div id="editorModal" role="dialog" aria-modal="true" aria-labelledby="editorTitle" onclick="if(event.target === this) closeEditorModal()" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
@@ -145,17 +193,6 @@
               <option value="Malayalam">Malayalam</option>
               <option value="Hindi">Hindi</option>
               <option value="English">English</option>
-            </select>
-          </div>
-          <div class="col-span-2 sm:col-span-1">
-            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1" for="f_mood">Editorial mood</label>
-            <select id="f_mood" class="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs sm:text-sm text-vault-cream">
-              <option value="Investigative Thriller">Investigative Thriller</option>
-              <option value="Comfort & Comedy">Comfort & Comedy</option>
-              <option value="Mythological Epic">Mythological Epic</option>
-              <option value="Smart Whodunit">Smart Whodunit</option>
-              <option value="High-Octane Action">High-Octane Action</option>
-              <option value="Mind-Bender">Mind-Bender</option>
             </select>
           </div>
         </div>
@@ -520,7 +557,8 @@ function stamp(value){
 $("stampLegend").innerHTML=Object.entries(stamps).map(([key,s])=>`<div>${stamp(key)}<p>${s.note}</p></div>`).join("");
 window.renderVaultMeterHTML=function(value){
  const rating=window.normalizeRating(value);
- return `<span class="stars" role="img" aria-label="${window.formatVaultScore(rating)} out of 5 stars">${Array.from({length:5},(_,i)=>`<span class="star" aria-hidden="true">★<b style="width:${Math.max(0,Math.min(100,(rating-i)*100))}%">★</b></span>`).join("")}</span>`;
+ const starSvg=filled=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.6 2.82 5.71 6.3.92-4.56 4.45 1.08 6.27L12 16.99l-5.64 2.96 1.08-6.27-4.56-4.45 6.3-.92Z" fill="${filled?"currentColor":"none"}" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+ return `<span class="stars" role="img" aria-label="${window.formatVaultScore(rating)} out of 5 stars">${Array.from({length:5},(_,i)=>`<span class="star" aria-hidden="true">${starSvg(false)}<b class="star-fill" style="--fill:${Math.round(Math.max(0,Math.min(100,(rating-i)*100)))}%;--order:${i}">${starSvg(true)}</b></span>`).join("")}</span>`;
 };
 function ratingHTML(value){
  return `${window.renderVaultMeterHTML(value)} <span class="score">${window.formatVaultScore(value)} / 5</span>`;
@@ -572,7 +610,7 @@ function genreTags(movie,max=16){
  const names=filmGenres(movie.genres).slice(0,max);
  return names.length?`<div class="film-genres" aria-label="Genres">${names.map(g=>`<span>${esc(g)}</span>`).join("")}</div>`:"";
 }
-function filterGenres(movie){return [...filmGenres(movie.genres),movie.mood].filter(Boolean);}
+function filterGenres(movie){return filmGenres(movie.genres);}
 function poster(movie,hero=false){
  return `<img src="${esc(posterUrl(movie)||window.generateVaultFallbackPoster(movie.title,movie.year))}" alt="${esc(movie.title)} poster" data-movie="${esc(movie.id)}" data-title="${esc(movie.title)}" data-year="${esc(movie.year)}" loading="${hero?"eager":"lazy"}" decoding="async"${hero?' fetchpriority="high"':""}>`;
 }
@@ -609,7 +647,7 @@ function renderSpotlight(movies){
  <div class="front-grid"><article class="front-feature">
  <div class="front-copy"><p class="kicker">${isKnives?"Weekend Vault Pick":feature.type==="Recommendation"?"Weekend pick":"In the spotlight"}</p>
  <h1>${filmTitle(feature)}</h1>
- <p class="front-meta">${[feature.year,feature.director,feature.mood].filter(Boolean).map(esc).join(" · ")}</p>
+ <p class="front-meta">${[feature.year,feature.director].filter(Boolean).map(esc).join(" · ")}</p>
  ${genreTags(feature,3)}
  <p class="front-lead">${isKnives?"A mystery novelist turns up dead. His family has a lot to say and even more to hide. Pick a suspect early. See how long you stick with them.":esc(feature.verdict||feature.synopsis||"")}</p>
  ${isRated(feature)?`<div class="score-row">${ratingHTML(feature.rating)} ${stamp(feature.tier)}</div>`:""}
@@ -633,7 +671,7 @@ function renderSpotlight(movies){
 window.renderMovies=function(){
  const movies=window.movies;
  selectOptions("langFilter",movies.map(m=>m.language),"All languages");
- selectOptions("moodFilter",movies.flatMap(filterGenres),"All genres & moods");
+ selectOptions("moodFilter",movies.flatMap(filterGenres),"All genres");
  const search=$("searchInput").value.trim().toLowerCase();
  const lang=$("langFilter").value,mood=$("moodFilter").value,tier=$("tierFilter").value,type=window.currentTypeFilter;
  const filtered=movies.filter(m=>(type==="all"||m.type===type)&&(lang==="all"||m.language===lang)&&(mood==="all"||filterGenres(m).includes(mood))&&(tier==="all"||stampKey(m.tier)===tier)&&(!search||[m.title,m.year,m.cast,m.director,m.language,...filterGenres(m)].some(x=>String(x??"").toLowerCase().includes(search))));
@@ -858,7 +896,7 @@ window.openEditorModal=id=>{
  const m=window.movies.find(m=>m.id===id);
  if(m){
   $("editId").value=m.id;
-  for(const f of ["title","year","type","language","mood","platform","director","poster","synopsis","cast","crew","screenplay","bgm","verdict","review","spoilers"]){
+  for(const f of ["title","year","type","language","platform","director","poster","synopsis","cast","crew","screenplay","bgm","verdict","review","spoilers"]){
    const el=$("f_"+f);el.value=m[f]??"";
    if(el.tagName==="SELECT"&&!el.value&&m[f]){el.add(new Option(m[f],m[f]));el.value=m[f];}
   }
@@ -904,9 +942,61 @@ async function hydrateDefaultPosters(){
 window.handleAdminAuth=()=>alert("Admin sign-in is still connecting or is unavailable. The film archive can be browsed without signing in.");
 window.openLinkedFilm=()=>{
  const id=new URL(location.href).searchParams.get("film");
- if(id&&!window.currentOpenMovieId&&window.movies.some(m=>m.id===id))window.openDetailModal(id);
+ if(location.hash!=="#trailers"&&id&&!window.currentOpenMovieId&&window.movies.some(m=>m.id===id))window.openDetailModal(id);
 };
-window.renderMovies();window.setTypeFilter("all");hydrateDefaultPosters();window.openLinkedFilm();
+/* Curated official uploads. To add a trailer, add its YouTube video ID and upload date here. */
+const vaultTrailers=[
+ {title:"O.M – Operation Mole",id:"aGSOpb_6kv8",language:"Tamil",date:"2026-11-13",channel:"Divo Music"},
+ {title:"Sathyavan Savithiri",id:"XCLQGsbnFlw",language:"Tamil",date:"2026-11-12",channel:"Zee Studios South"},
+ {title:"Maatrubhumi: May War Rest in Peace",id:"fA8-gXDoAk8",language:"Hindi",date:"2026-11-10",channel:"Salman Khan Films"},
+ {title:"Itllu Arjuna",id:"RkH_FE0w--0",language:"Telugu",date:"2026-11-04",channel:"T-Series Telugu"}
+].filter(v=>/^[A-Za-z0-9_-]{11}$/.test(v.id)).sort((a,b)=>b.date.localeCompare(a.date));
+const trailerPage=$("trailers"),trailerDialog=$("trailer-dialog"),trailerPlayer=$("trailer-player");
+const watchURL=id=>"https://www.youtube.com/watch?v="+id;
+function showTrailerRoute(){
+ const open=location.hash==="#trailers";
+ if(!open&&trailerDialog.open)trailerDialog.close();
+ trailerPage.hidden=!open;
+ for(const el of document.querySelectorAll("main > section:not(#trailers)"))el.classList.toggle("trailer-route-hidden",open);
+ const link=document.querySelector('[href="#trailers"]');
+ if(open){
+  link?.setAttribute("aria-current","page");
+  if(!$("trailer-grid").innerHTML)$("trailer-grid").innerHTML=vaultTrailers.map((v,i)=>`
+   <article class="trailer-card ${i===0?"trailer-feature":""}">
+    <button type="button" class="trailer-poster" data-trailer="${v.id}" aria-label="Play ${esc(v.title)} trailer">
+     <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="" loading="${i===0?"eager":"lazy"}" decoding="async">
+     <span class="trailer-play" aria-hidden="true">▶</span>
+    </button>
+    <div class="trailer-copy"><div class="kicker">${i===0?"Featured / ":""}${esc(v.language)} · Official trailer</div>
+     <h2>${esc(v.title)}</h2>
+     <p>${esc(v.channel)} · <time datetime="${v.date}">${new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeZone:"UTC"}).format(new Date(v.date))}</time></p>
+     <a href="${watchURL(v.id)}" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
+    </div>
+   </article>`).join("");
+ }else link?.removeAttribute("aria-current");
+}
+$("trailer-grid").addEventListener("click",e=>{
+ const trigger=e.target.closest("[data-trailer]");
+ const v=vaultTrailers.find(t=>t.id===trigger?.dataset.trailer);
+ if(!v)return;
+ if(typeof trailerDialog.showModal!=="function"){location.href=watchURL(v.id);return;}
+ $("trailer-dialog-title").textContent=v.title;
+ $("trailer-youtube").href=watchURL(v.id);
+ const frame=document.createElement("iframe");
+ frame.title=v.title+" official trailer";
+ frame.src="https://www.youtube-nocookie.com/embed/"+v.id+"?autoplay=1&playsinline=1";
+ frame.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";
+ frame.allowFullscreen=true;
+ frame.referrerPolicy="strict-origin-when-cross-origin";
+ trailerPlayer.replaceChildren(frame);
+ if(!trailerDialog.open)trailerDialog.showModal();
+});
+trailerDialog.addEventListener("close",()=>trailerPlayer.replaceChildren());
+trailerDialog.addEventListener("click",e=>{if(e.target===trailerDialog&&!(e.clientX>=trailerDialog.getBoundingClientRect().left&&e.clientX<=trailerDialog.getBoundingClientRect().right&&e.clientY>=trailerDialog.getBoundingClientRect().top&&e.clientY<=trailerDialog.getBoundingClientRect().bottom))trailerDialog.close();});
+window.addEventListener("hashchange",()=>{showTrailerRoute();if(location.hash==="#trailers")window.scrollTo(0,0);else document.getElementById(location.hash.slice(1))?.scrollIntoView();});
+showTrailerRoute();
+
+window.renderMovies();window.setTypeFilter("all");hydrateDefaultPosters();if(location.hash!=="#trailers")window.openLinkedFilm();
 
 window.normalizePosterForSave=(value,title,year)=>{const p=originalPoster(value);return validPoster(p)?p:"";};
 window.restoreCachedPosters=hydrateDefaultPosters;
@@ -1168,7 +1258,6 @@ window.restoreCachedPosters=hydrateDefaultPosters;
         year: yearVal,
         type: document.getElementById("f_type").value,
         language: document.getElementById("f_language").value,
-        mood: document.getElementById("f_mood").value,
         rating: document.getElementById("f_rating").value === "" ? null : window.normalizeRating(document.getElementById("f_rating").value),
         tier: document.getElementById("f_tier").value,
         platform: document.getElementById("f_platform").value.trim(),
