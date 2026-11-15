@@ -75,6 +75,32 @@
 @media(max-width:760px){.trailer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.trailer-feature{display:flex}.trailer-copy .kicker{letter-spacing:.1em}.mast-inner{gap:.35rem}.mast nav{gap:7px}.mast nav a{font-size:.68rem}.mast nav .picks-link .wide-picks{display:none}.mast nav .picks-link .mobile-picks{display:inline}}
 @media(max-width:355px){.trailer-grid{grid-template-columns:1fr}.mast nav .picks-link{display:none}}
 @media(prefers-reduced-motion:reduce){.star > .star-fill,.front-feature .front-copy,.front-review-copy,.front-feature .front-art,.trailers-mast{animation:none}.front-feature .front-art img,.trailer-poster img{transition:none}.front-feature:hover .front-art img,.trailer-poster:hover img{transform:none}}
+.front-feature{isolation:isolate}
+.vault-motion{position:absolute;width:min(76%,530px);aspect-ratio:1;right:-9%;top:50%;transform:translate(var(--drift-x,0px),calc(-50% + var(--drift-y,0px)));pointer-events:none;z-index:1;color:#d9a65e;opacity:.35;transition:transform .18s ease-out;mask-image:linear-gradient(90deg,transparent,#000 38%)}
+.vault-motion .orbit{transform-origin:50% 50%;animation:vault-orbit 5s cubic-bezier(.18,.75,.23,1) both}
+@keyframes vault-orbit{from{transform:rotate(-56deg)}to{transform:rotate(0)}}
+.front-feature .front-copy{z-index:2}
+.front-feature:has(.poster-preview-trigger:focus-visible) .vault-motion .orbit{animation:orbit-focus .6s ease-out both}
+@keyframes orbit-focus{from{transform:rotate(-32deg)}to{transform:rotate(0)}}
+.sheet-head .poster-preview-trigger img{object-fit:contain;background:#190f0e}
+@media(max-width:760px){.preview-pill{font-size:.61rem;bottom:7%}}
+
+.poster-preview-trigger{position:relative;display:block;padding:0;background:none;border:0;color:inherit;cursor:pointer;isolation:isolate}
+.card .poster-preview-trigger,.front-art .poster-preview-trigger,.front-review-art .poster-preview-trigger{display:block;width:100%;height:100%;margin:0;padding:0;border:0}
+.card-art .poster-preview-trigger{position:absolute;inset:0;text-align:center}
+.front-art .poster-preview-trigger{display:grid;place-items:center}
+.front-review-art .poster-preview-trigger{position:absolute;inset:0}
+.poster-preview-trigger:focus-visible{outline-offset:-4px;z-index:2}
+.preview-pill{position:absolute;left:50%;bottom:12%;transform:translateX(-50%);z-index:2;white-space:nowrap;border:1px solid #d4a36486;border-radius:99px;background:#190f0eea;color:#f5d298;font-weight:800;font-size:.67rem;padding:.28rem .55rem;transition:background .2s,color .2s}
+.poster-preview-trigger:hover .preview-pill,.poster-preview-trigger:focus-visible .preview-pill{background:#e9ad45;color:#201406}
+.card-kind{pointer-events:none}
+.film-preview-controls,.provider-buttons{display:flex;flex-wrap:wrap;gap:8px;margin:.65rem 0 .25rem}
+.film-preview-controls .btn,.provider-buttons .btn{min-height:36px}
+.provider-buttons .btn{font-size:.73rem}
+.provider-notice{font-size:.76rem;color:var(--muted);margin-top:.55rem}
+.provider-notice a{color:var(--gold);text-decoration:underline}
+.trailer-dialog .film-preview-summary{color:var(--muted);margin:.5rem 0 1rem}
+@media(prefers-reduced-motion:reduce){.vault-motion{transform:translateY(-50%);transition:none}.vault-motion .orbit,.front-feature:has(.poster-preview-trigger:focus-visible) .vault-motion .orbit{animation:none}.preview-pill{transition:none}}
 </style>
 </head><body>
 <a class="btn skip" href="#archive">Skip to films</a>
@@ -101,7 +127,9 @@
 </section>
 <dialog id="trailer-dialog" class="trailer-dialog" aria-labelledby="trailer-dialog-title">
  <header><h2 id="trailer-dialog-title"></h2><form method="dialog"><button class="btn secondary" aria-label="Close trailer">×</button></form></header>
+ <p id="film-preview-summary" class="film-preview-summary" hidden></p>
  <div id="trailer-player"></div>
+ <div id="film-preview-links"></div>
  <a id="trailer-youtube" class="btn secondary" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
 </dialog>
 </main>
@@ -210,6 +238,13 @@
           <small id="filmMetadataStatus" role="status" aria-live="polite"></small>
         </div>
 
+        <div class="genre-logo-editor">
+          <div><label for="f_trailer">YouTube trailer or teaser</label><input id="f_trailer" type="text" placeholder="Filled from TMDB, or paste an official YouTube link"></div>
+          <div><label for="f_directLinks">Direct streaming title links · India</label>
+            <textarea id="f_directLinks" rows="2" maxlength="3000" placeholder="One per line: Netflix | https://www.netflix.com/title/…"></textarea>
+            <small>Optional. TMDB supplies Indian provider listings; add exact title links here when you have them.</small>
+          </div>
+        </div>
         <!-- Fractional Rating (Supports 3.25, 3.75, etc.) + Live 5-Vault Sync Preview -->
         <div class="p-3.5 rounded-2xl bg-black/40 border border-white/10 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
           <div class="sm:col-span-4">
@@ -628,6 +663,75 @@ function selectOptions(id,values,label){
  const options=`<option value="all">${label}</option>`+all.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
  if(el.dataset.options!==options){el.innerHTML=options;el.dataset.options=options;el.value=all.includes(old)?old:"all";}
 }
+// Public film previews use saved metadata, never the editor's API key.
+const seedMedia={
+ "knives-out-2019":{trailer:"qGqiHJTsRkQ",directLinks:[
+  {name:"Prime Video",url:"https://app.primevideo.com/detail?gti=amzn1.dv.gti.bd5bb5ac-9dfe-4bf3-9987-02e2ef5dc117"},
+  {name:"Lionsgate Play",url:"https://lionsgateplay.com/en/movies/knives-out/125930536013"}
+ ],checked:"2026-11-15"},
+ "scene-2026":{trailer:"_nuRAflabx8",videoType:"teaser"}
+};
+const youtubeId=v=>typeof v==="string"&&/^[\w-]{11}$/.test(v)?v:"";
+const officialVideo=(data,lang)=>(
+ (Array.isArray(data?.results)?data.results:[]).filter(v=>v?.official===true&&v.site==="YouTube"&&["Trailer","Teaser"].includes(v.type)&&youtubeId(v.key))
+ .sort((a,b)=>(a.type!=="Trailer")-(b.type!=="Trailer")||(b.iso_639_1===lang)-(a.iso_639_1===lang)||String(b.published_at||"").localeCompare(String(a.published_at||"")))[0]
+);
+function previewData(movie){return {...seedMedia[movie.id],...movie.media};}
+function indiaProviders(data){
+ const r=data?.results?.IN;
+ const names=v=>[...new Set((Array.isArray(v)?v:[]).map(p=>p?.provider_name).filter(p=>typeof p==="string"))].slice(0,18);
+ const link=validTitleLogo(r?.link);
+ return {watchLink:link,stream:names(r?.flatrate),free:[...new Set([...names(r?.free),...names(r?.ads)])],rent:names(r?.rent),buy:names(r?.buy),checked:new Date().toISOString().slice(0,10)};
+}
+function providerSearch(name,movie){
+ const q=encodeURIComponent(movie.title), n=name.toLowerCase();
+ if(n.startsWith("netflix"))return "https://www.netflix.com/search?q="+q;
+ if(n.includes("amazon")||n.includes("prime video"))return "https://www.primevideo.com/search/ref=atv_nb_sr?phrase="+q;
+ return "";
+}
+function whereToWatch(movie){
+ const x=previewData(movie);
+ const direct=(Array.isArray(x.directLinks)?x.directLinks:[]).filter(l=>l?.name&&validTitleLogo(l.url));
+ const directHTML=direct.map(l=>`<a class="btn secondary" href="${esc(validTitleLogo(l.url))}" target="_blank" rel="noopener noreferrer">${esc(l.name)} ↗</a>`).join("");
+ const labels=[["stream","Subscription"],["free","Free / with ads"],["rent","Rent"],["buy","Buy"]];
+ const providerHTML=labels.map(([key,label])=>{
+  const names=Array.isArray(x[key])?x[key].filter(n=>typeof n==="string"):[];
+  return names.length?`<p><strong>${label}</strong> · ${names.map(esc).join(", ")}</p>`:"";
+ }).join("");
+ const search=[...new Set(labels.flatMap(([key])=>Array.isArray(x[key])?x[key]:[]))].filter(n=>typeof n==="string"&&!direct.some(l=>l.name.toLowerCase()===n.toLowerCase())).map(n=>{
+  const href=providerSearch(n,movie);
+  return href?`<a class="btn secondary" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Search ${esc(n)} ↗</a>`:"";
+ }).join("");
+ const watch=validTitleLogo(x.watchLink),checked=/^\d{4}-\d{2}-\d{2}$/.test(x.checked||"")?x.checked:"";
+ const links=directHTML+search+(watch?`<a class="btn secondary" href="${esc(watch)}" target="_blank" rel="noopener noreferrer">All watch options on TMDB ↗</a>`:"");
+ return `<section class="note film-watch"><div class="kicker">Where to watch · India</div>${providerHTML}
+ ${links?`<div class="provider-buttons">${links}</div>`:""}
+ ${providerHTML||directHTML?"":`<p>${checked?"No Indian streaming options listed at the last lookup.":"No Indian streaming data saved for this film yet."}</p>`}
+ ${checked?`<p class="provider-notice">Last checked ${checked}. Availability may change.</p>`:""}
+ ${providerHTML||watch?`<p class="provider-notice">Availability by <a href="https://www.justwatch.com/in" target="_blank" rel="noopener noreferrer">JustWatch</a> via TMDB.</p>`:""}</section>`;
+}
+function posterButton(movie,eager=false){
+ return `<button class="poster-preview-trigger" type="button" data-preview-film="${esc(movie.id)}" aria-label="Preview ${esc(movie.title)}">${poster(movie,eager)}<span class="preview-pill" aria-hidden="true">${youtubeId(previewData(movie).trailer)?"▶ ":""}Preview</span></button>`;
+}
+function filmMotionGraphic(){
+ return `<svg class="vault-motion" viewBox="0 0 400 400" aria-hidden="true"><circle cx="200" cy="200" r="187" stroke="currentColor" stroke-width=".8" fill="none"/><circle cx="200" cy="200" r="168" stroke="currentColor" stroke-dasharray="2 7" fill="none"/><g class="orbit" fill="none" stroke="currentColor"><path d="M45 200a155 155 0 0 1 155-155m155 155a155 155 0 0 1-155 155" stroke-width="2"/><path d="M200 23v44m0 266v44M23 200h44m266 0h44" opacity=".7"/><circle cx="200" cy="200" r="126" opacity=".45"/></g></svg>`;
+}
+function wireMotion(hero){
+ const panel=hero.querySelector(".front-feature");
+ if(!panel||!window.matchMedia?.("(pointer:fine) and (prefers-reduced-motion:no-preference)").matches)return;
+ let raf=0;
+ panel.addEventListener("pointermove",e=>{
+  if(e.pointerType==="touch")return;
+  if(raf)cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(()=>{
+   const b=panel.getBoundingClientRect();if(!b.width||!b.height)return;
+   panel.style.setProperty("--drift-x",((e.clientX-b.left)/b.width-.5)*44+"px");
+   panel.style.setProperty("--drift-y",((e.clientY-b.top)/b.height-.5)*32+"px");
+  });
+ });
+ panel.addEventListener("pointerleave",()=>{cancelAnimationFrame(raf);panel.style.removeProperty("--drift-x");panel.style.removeProperty("--drift-y");});
+}
+
 let spotlightKey="";
 const isRated=m=>m.rating!==null&&m.rating!==undefined&&m.rating!==""&&Number.isFinite(Number(m.rating));
 function editorialLink(movie,label){
@@ -638,13 +742,13 @@ function renderSpotlight(movies){
  const latest=movies.find(m=>m.type==="Review"&&m.featured)||movies.find(m=>m.type==="Review");
  const feature=chosen||movies.find(m=>m.featured)||movies[0];
  const hero=$("heroSection");
- const key=JSON.stringify([feature,latest].map(m=>m?[m.id,m.title,m.year,m.director,m.language,m.mood,m.type,m.verdict,m.rating,m.tier,posterUrl(m),m.titleLogo,m.genres]:null));
+ const key=JSON.stringify([feature,latest].map(m=>m?[m.id,m.title,m.year,m.director,m.language,m.mood,m.type,m.verdict,m.rating,m.tier,posterUrl(m),m.titleLogo,m.genres,m.media]:null));
  if(!feature){hero.innerHTML="";hero.hidden=true;spotlightKey="";return;}
  if(key===spotlightKey)return;
  hero.hidden=false;spotlightKey=key;
  const isKnives=feature===chosen;
  hero.innerHTML=`<div class="edition-line"><p class="kicker"><span class="edition-dot" aria-hidden="true"></span> Independent film journal</p><a href="#archive">Browse the archive <span aria-hidden="true">↓</span></a></div>
- <div class="front-grid"><article class="front-feature">
+ <div class="front-grid"><article class="front-feature">${filmMotionGraphic()}
  <div class="front-copy"><p class="kicker">${isKnives?"Weekend Vault Pick":feature.type==="Recommendation"?"Weekend pick":"In the spotlight"}</p>
  <h1>${filmTitle(feature)}</h1>
  <p class="front-meta">${[feature.year,feature.director].filter(Boolean).map(esc).join(" · ")}</p>
@@ -652,10 +756,10 @@ function renderSpotlight(movies){
  <p class="front-lead">${isKnives?"A mystery novelist turns up dead. His family has a lot to say and even more to hide. Pick a suspect early. See how long you stick with them.":esc(feature.verdict||feature.synopsis||"")}</p>
  ${isRated(feature)?`<div class="score-row">${ratingHTML(feature.rating)} ${stamp(feature.tier)}</div>`:""}
  <div class="front-actions"><button class="btn" data-open-movie="${esc(feature.id)}">${feature.type==="Recommendation"?"Why it’s worth watching":"Read the review"} <span aria-hidden="true">↗</span></button></div></div>
- <div class="front-art">${poster(feature,true)}</div></article>
- ${latest&&latest!==feature?`<article class="front-review"><div class="front-review-art">${poster(latest)}</div><div class="front-review-copy"><p class="kicker">Review Friday</p><h2>${filmTitle(latest)}</h2><p class="front-review-dek">${latest.id==="scene-2026"?"Scene takes half a movie to get going. Then Naslen steals it.":esc(latest.verdict||"")}</p><div class="score-row">${isRated(latest)?ratingHTML(latest.rating):""} ${stamp(latest.tier)}</div>${editorialLink(latest,"Read the review")}</div></article>`:""}
+ <div class="front-art">${posterButton(feature,true)}</div></article>
+ ${latest&&latest!==feature?`<article class="front-review"><div class="front-review-art">${posterButton(latest)}</div><div class="front-review-copy"><p class="kicker">Review Friday</p><h2>${filmTitle(latest)}</h2><p class="front-review-dek">${latest.id==="scene-2026"?"Scene takes half a movie to get going. Then Naslen steals it.":esc(latest.verdict||"")}</p><div class="score-row">${isRated(latest)?ratingHTML(latest.rating):""} ${stamp(latest.tier)}</div>${editorialLink(latest,"Read the review")}</div></article>`:""}
  </div>`;
- setTitleLogos(hero);
+ setTitleLogos(hero);wireMotion(hero);
  const reviewImage=hero.querySelector(".front-review-art img");
  if(reviewImage){
    const setReviewBackdrop=()=>{
@@ -678,7 +782,7 @@ window.renderMovies=function(){
  renderSpotlight(movies);
  $("archiveCount").textContent=`${filtered.length} ${filtered.length===1?"film":"films"}`;
  $("emptyState").classList.toggle("hidden",!!filtered.length);
- $("moviesGrid").innerHTML=filtered.map(m=>`<article class="card"><div class="card-art">${poster(m)}<span class="card-kind">${m.type==="Recommendation"?"Weekend pick":"Review"}</span></div><div class="card-body"><div class="card-meta">${[m.year,m.language].filter(Boolean).map(esc).join(" · ")}</div><h3>${filmTitle(m)}</h3>${genreTags(m,3)}<p>${esc(m.verdict||m.synopsis||"")}</p><div class="card-bottom">${isRated(m)?ratingHTML(m.rating):'<span class="card-meta">Unrated recommendation</span>'}</div><div>${stamp(m.tier)}</div><button data-open-movie="${esc(m.id)}" aria-label="Open ${esc(m.title)}">Open ${m.type==="Recommendation"?"pick":"review"} <span aria-hidden="true">↗</span></button></div></article>`).join("");
+ $("moviesGrid").innerHTML=filtered.map(m=>`<article class="card"><div class="card-art">${posterButton(m)}<span class="card-kind">${m.type==="Recommendation"?"Weekend pick":"Review"}</span></div><div class="card-body"><div class="card-meta">${[m.year,m.language].filter(Boolean).map(esc).join(" · ")}</div><h3>${filmTitle(m)}</h3>${genreTags(m,3)}<p>${esc(m.verdict||m.synopsis||"")}</p><div class="card-bottom">${isRated(m)?ratingHTML(m.rating):'<span class="card-meta">Unrated recommendation</span>'}</div><div>${stamp(m.tier)}</div><button data-open-movie="${esc(m.id)}" aria-label="Open ${esc(m.title)}">Open ${m.type==="Recommendation"?"pick":"review"} <span aria-hidden="true">↗</span></button></div></article>`).join("");
  setTitleLogos($("moviesGrid"));
 };
 window.setTypeFilter=type=>{
@@ -712,7 +816,8 @@ window.openDetailModal=function(id){
  const s=getViewerStats(m),v=s.userVote??(s.count?s.avg:window.normalizeRating(m.rating));
  const stepVal=Math.max(.5,Math.min(5,Math.round(v*4)/4));
  const share="https://x.com/intent/tweet?text="+encodeURIComponent(`${m.title} (${m.year}) · ${isRated(m)?window.formatVaultScore(m.rating)+"/5 · ":""}via @TheVaultCertify https://thevault.rest/?film=${encodeURIComponent(id)}`);
- sheet.innerHTML=`<div class="sheet-head">${poster(m)}<div><div class="kicker">${m.type==="Recommendation"?"Weekend pick":"The Vault review"}</div><h2 id="detailTitle">${filmTitle(m)}</h2><p>${[m.year,m.language,m.director].filter(Boolean).map(esc).join(" · ")}</p>${genreTags(m)}<div class="score-row">${isRated(m)?ratingHTML(m.rating):""} ${stamp(m.tier)}</div></div><button class="btn secondary sheet-close" data-close-review aria-label="Close review">×</button></div><div class="sheet-body">
+ sheet.innerHTML=`<div class="sheet-head">${posterButton(m)}<div><div class="kicker">${m.type==="Recommendation"?"Weekend pick":"The Vault review"}</div><h2 id="detailTitle">${filmTitle(m)}</h2><p>${[m.year,m.language,m.director].filter(Boolean).map(esc).join(" · ")}</p>${genreTags(m)}<div class="score-row">${isRated(m)?ratingHTML(m.rating):""} ${stamp(m.tier)}</div></div><button class="btn secondary sheet-close" data-close-review aria-label="Close review">×</button></div><div class="sheet-body">
+ ${whereToWatch(m)}
  ${m.verdict?`<section class="review-panel"><div class="kicker">The verdict</div><h3>${esc(m.verdict)}</h3></section>`:""}
  ${m.review?`<section><h3>${m.type==="Recommendation"?"Why watch it":"Full review"}</h3><p class="review-text">${esc(m.review)}</p></section>`:""}
  ${m.synopsis?`<details class="note"><summary>Synopsis</summary><p>${esc(m.synopsis)}</p></details>`:""}
@@ -745,7 +850,7 @@ document.addEventListener("click",e=>{const trigger=e.target.closest("[data-open
 document.addEventListener("keydown",e=>{
  const editor=$("editorModal"),review=$("detailModal");
  const modal=!editor.classList.contains("hidden")?editor:!review.classList.contains("hidden")?review:null;
- if(!modal)return;
+ if(!modal||$("trailer-dialog").open)return;
  if(e.key==="Escape"){e.preventDefault();modal===editor?window.closeEditorModal():window.closeDetailModal();}
  if(e.key==="Tab"){
   const f=[...modal.querySelectorAll("a[href],button:not([disabled]),input:not([type=hidden]),select,textarea,summary")].filter(n=>n.offsetWidth&&n.offsetHeight);
@@ -818,17 +923,39 @@ function chooseTitleLogo(list,language){
  return (Array.isArray(list)?list:[]).filter(l=>l&&/\.(png|svg|webp)$/i.test(l.file_path||"")&&tmdbPoster(l.file_path))
   .sort((a,b)=>score(a)-score(b)||(b.vote_count||0)-(a.vote_count||0)||(b.width||0)-(a.width||0))[0];
 }
+let adminMedia={};
+const trailerInput=$("f_trailer"),directInput=$("f_directLinks");
+function parseYouTube(value){
+ const raw=String(value||"").trim();
+ if(youtubeId(raw))return raw;
+ try{
+  const u=new URL(raw);
+  if(u.protocol!=="https:")return "";
+  if(u.hostname==="youtu.be")return youtubeId(u.pathname.split("/")[1]);
+  if(["youtube.com","www.youtube.com","m.youtube.com"].includes(u.hostname))return youtubeId(u.searchParams.get("v")||u.pathname.match(/^\/(embed|shorts)\/([\w-]+)/)?.[2]);
+ }catch{}
+ return "";
+}
+function directRows(input){
+ return String(input||"").split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>{
+  const sep=line.indexOf("|");if(sep<1)return null;
+  const name=line.slice(0,sep).trim().slice(0,60),url=validTitleLogo(line.slice(sep+1));
+  return name&&url?{name,url}:null;
+ });
+}
 window.filmMetadataForSave=()=>({
  pending:filmPickPending,
  genres:filmGenres(genreInput.value),
  titleLogo:validTitleLogo(logoInput.value),
- invalidLogo:!!logoInput.value.trim()&&!validTitleLogo(logoInput.value)
+ invalidLogo:!!logoInput.value.trim()&&!validTitleLogo(logoInput.value),
+ invalidMedia:(!!trailerInput.value.trim()&&!parseYouTube(trailerInput.value))||directRows(directInput.value).some(row=>!row),
+ media:{...adminMedia,trailer:parseYouTube(trailerInput.value),directLinks:directRows(directInput.value).filter(Boolean).slice(0,12)}
 });
 window.selectGraspedMovie=async idx=>{
  const item=window.grasperCacheResults[idx];if(!item)return;
  const filmId=Number(item.id);
  if(!Number.isSafeInteger(filmId)||filmId<=0)return;
- const run=++pickRun, oldPoster=posterInput.value, oldGenres=genreInput.value, oldLogo=logoInput.value;
+ const run=++pickRun, oldPoster=posterInput.value, oldGenres=genreInput.value, oldLogo=logoInput.value,oldTrailer=trailerInput.value;
  const put=(field,value)=>{if(value&&!$(field).value)$(field).value=value;};
  if(!$("editId").value){
   $("f_title").value=item.title||"";
@@ -840,18 +967,26 @@ window.selectGraspedMovie=async idx=>{
  status.textContent="Checking the available original posters…";
  const lang=[...new Set([item.original_language,"en","null"].filter(Boolean))].join(",");
  try{
-  const [img,details,credits]=await Promise.all([
+  const [img,details,credits,videos,providers]=await Promise.all([
    tmdb(`movie/${filmId}/images`,{include_image_language:lang}).catch(()=>null),
    tmdb(`movie/${filmId}`).catch(()=>null),
-   tmdb(`movie/${filmId}/credits`).catch(()=>null)
+   tmdb(`movie/${filmId}/credits`).catch(()=>null),
+   tmdb(`movie/${filmId}/videos`,{include_video_language:[...new Set([item.original_language,"en"].filter(Boolean))].join(",")}).catch(()=>null),
+   tmdb(`movie/${filmId}/watch/providers`).catch(()=>null)
   ]);
   if(run!==pickRun)return;
+  if(providers)Object.assign(adminMedia,indiaProviders(providers));
+  const video=officialVideo(videos,item.original_language);
+  if(video&&trailerInput.value===oldTrailer){
+   trailerInput.value=watchURL(video.key);adminMedia.videoType=video.type.toLowerCase();
+  }
   const names=filmGenres(details?.genres?.map(g=>g?.name)||[]);
   const logo=tmdbPoster(chooseTitleLogo(img?.logos,item.original_language)?.file_path);
   if(genreInput.value===oldGenres&&Array.isArray(details?.genres))genreInput.value=names.join(", ");
   if(logoInput.value===oldLogo&&img){logoInput.value=logo;previewTitleLogo();}
   metadataStatus.textContent=(details?names.length?"TMDB genres loaded.":"No genres listed.":"Genre lookup unavailable.")+" "+
    (img?logo?"Title logo found.":"No title logo listed. The title will use text unless you add a logo URL.":"Title logo lookup unavailable.");
+  metadataStatus.textContent+=" "+(video?"Official preview found.":"No official video found in TMDB.")+" "+(providers?"India availability checked.":"Availability lookup unavailable.");
   const found=bestImage(img?.posters,item.original_language);
   if(posterInput.value===oldPoster){
    const url=tmdbPoster(found?.file_path||item.poster_path);
@@ -891,11 +1026,14 @@ function clearEditorAsync(){searchRun++;pickRun++;imageRun++;uploadRun++;logoChe
 window.openEditorModal=id=>{
  if(!window.isAdmin)return;
  window.closeDetailModal(); editorFocus=document.activeElement;
- clearEditorAsync(); $("movieForm").reset(); $("grasperQuery").value="";$("grasperResults").classList.add("hidden");$("editId").value="";
+ clearEditorAsync(); $("movieForm").reset();adminMedia={}; $("grasperQuery").value="";$("grasperResults").classList.add("hidden");$("editId").value="";
  $("editorTitle").textContent=id?"Edit Vault Entry":"Add to The Vault";
  const m=window.movies.find(m=>m.id===id);
  if(m){
   $("editId").value=m.id;
+  adminMedia=previewData(m);
+  trailerInput.value=youtubeId(adminMedia.trailer)?watchURL(adminMedia.trailer):"";
+  directInput.value=(Array.isArray(adminMedia.directLinks)?adminMedia.directLinks:[]).filter(l=>l?.name&&l.url).map(l=>l.name+" | "+l.url).join("\n");
   for(const f of ["title","year","type","language","platform","director","poster","synopsis","cast","crew","screenplay","bgm","verdict","review","spoilers"]){
    const el=$("f_"+f);el.value=m[f]??"";
    if(el.tagName==="SELECT"&&!el.value&&m[f]){el.add(new Option(m[f],m[f]));el.value=m[f];}
@@ -975,22 +1113,44 @@ function showTrailerRoute(){
    </article>`).join("");
  }else link?.removeAttribute("aria-current");
 }
+function openVideo(id,title,movie=null){
+ id=youtubeId(id);
+ if(typeof trailerDialog.showModal!=="function"){
+  if(id)location.href=watchURL(id);
+  else if(movie)window.openDetailModal(movie.id);
+  return;
+ }
+ $("trailer-dialog-title").textContent=title;
+ const fallback=$("trailer-youtube"),desc=$("film-preview-summary");
+ fallback.hidden=!id;
+ if(id)fallback.href=watchURL(id);
+ else fallback.removeAttribute("href");
+ desc.textContent=movie?(movie.synopsis||movie.verdict||""):"";
+ desc.hidden=!desc.textContent;
+ $("film-preview-links").innerHTML=movie?`<div class="film-preview-controls"><button class="btn" data-open-movie="${esc(movie.id)}">${movie.type==="Recommendation"?"Read the pick":"Read the review"} ↗</button></div>${whereToWatch(movie)}`:"";
+ trailerPlayer.replaceChildren();
+ if(id){
+  const frame=document.createElement("iframe");
+  frame.title=title+(movie&&previewData(movie).videoType==="teaser"?" official teaser":" official trailer");
+  frame.src="https://www.youtube-nocookie.com/embed/"+id+"?autoplay=1&playsinline=1";
+  frame.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";
+  frame.allowFullscreen=true;
+  frame.referrerPolicy="strict-origin-when-cross-origin";
+  trailerPlayer.replaceChildren(frame);
+ }
+ if(!trailerDialog.open)trailerDialog.showModal();
+}
 $("trailer-grid").addEventListener("click",e=>{
  const trigger=e.target.closest("[data-trailer]");
  const v=vaultTrailers.find(t=>t.id===trigger?.dataset.trailer);
- if(!v)return;
- if(typeof trailerDialog.showModal!=="function"){location.href=watchURL(v.id);return;}
- $("trailer-dialog-title").textContent=v.title;
- $("trailer-youtube").href=watchURL(v.id);
- const frame=document.createElement("iframe");
- frame.title=v.title+" official trailer";
- frame.src="https://www.youtube-nocookie.com/embed/"+v.id+"?autoplay=1&playsinline=1";
- frame.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";
- frame.allowFullscreen=true;
- frame.referrerPolicy="strict-origin-when-cross-origin";
- trailerPlayer.replaceChildren(frame);
- if(!trailerDialog.open)trailerDialog.showModal();
+ if(v)openVideo(v.id,v.title);
 });
+document.addEventListener("click",e=>{
+ const trigger=e.target.closest("[data-preview-film]");
+ const m=trigger&&window.movies.find(movie=>movie.id===trigger.dataset.previewFilm);
+ if(m)openVideo(previewData(m).trailer,m.title,m);
+});
+$("film-preview-links").addEventListener("click",e=>{if(e.target.closest("[data-open-movie]"))trailerDialog.close();});
 trailerDialog.addEventListener("close",()=>trailerPlayer.replaceChildren());
 trailerDialog.addEventListener("click",e=>{if(e.target===trailerDialog&&!(e.clientX>=trailerDialog.getBoundingClientRect().left&&e.clientX<=trailerDialog.getBoundingClientRect().right&&e.clientY>=trailerDialog.getBoundingClientRect().top&&e.clientY<=trailerDialog.getBoundingClientRect().bottom))trailerDialog.close();});
 window.addEventListener("hashchange",()=>{showTrailerRoute();if(location.hash==="#trailers")window.scrollTo(0,0);else document.getElementById(location.hash.slice(1))?.scrollIntoView();});
@@ -1251,8 +1411,10 @@ window.restoreCachedPosters=hydrateDefaultPosters;
       const meta = window.filmMetadataForSave();
       if (meta.pending) { alert("Wait for the TMDB film lookup to finish before publishing."); return; }
       if (meta.invalidLogo) { alert("Use a direct HTTPS image link for the title logo, or leave it blank."); return; }
+      if (meta.invalidMedia) { alert("Enter a valid YouTube link and use Provider | HTTPS URL on each streaming-link line."); return; }
       const payload = {
         title: titleVal,
+        media: meta.media,
         genres: meta.genres,
         titleLogo: meta.titleLogo,
         year: yearVal,
