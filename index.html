@@ -23,6 +23,19 @@
 @media(max-width:760px){.mast-inner{height:61px}.hero{padding-top:13px}.front-grid{grid-template-columns:1fr;gap:10px}.front-feature{min-height:0;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr)}.front-copy{padding:20px 3px 20px 15px}.front-copy h1{font-size:clamp(2.55rem,10vw,4.2rem)}.front-copy .kicker{font-size:.55rem}.front-meta{font-size:.67rem}.front-lead{font-size:.78rem;margin:.75rem 0}.front-art{padding:14px 9px 14px 7px}.front-art img{max-height:280px}.front-actions .btn{min-height:37px;font-size:.68rem;padding:.45rem .55rem;gap:.35rem}.front-review{display:grid;grid-template-columns:minmax(76px,27%) 1fr}.front-review-art{aspect-ratio:2/3;width:100%;height:auto;align-self:start;margin-top:10px;margin-left:8px;width:calc(100% - 8px);border:1px solid var(--line);border-radius:4px}.front-review-art::before{display:none}.front-review-copy{padding:12px;gap:5px}.front-review-copy h2{font-size:1.9rem}.front-review-dek{font-size:.74rem}.front-review .score-row{gap:5px}.front-review .stamp{margin-left:0}}
 @media(max-width:360px){.front-copy h1{font-size:2.4rem}.front-copy{padding-left:11px}.edition-line .kicker{letter-spacing:.12em}.edition-line a{font-size:.69rem}.front-feature{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
 @media(prefers-reduced-motion:reduce){.review-sheet,#editorModal>.liquid-modal{animation:none}.card:hover,.card:hover .card-art img{transform:none}}
+ 
+.title-logo{display:none;width:auto;max-width:100%;height:auto;object-fit:contain;object-position:left center;filter:drop-shadow(0 2px 5px #0009)}
+.title-has-logo>.title-logo{display:block}
+.title-has-logo>.title-text{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.front-copy .title-logo{max-height:150px;margin:.1em 0}
+.front-review-copy .title-logo,.card h3 .title-logo{max-height:54px}
+.sheet-head .title-logo{width:auto;aspect-ratio:auto;object-fit:contain;max-height:92px}
+.film-genres{display:flex;flex-wrap:wrap;gap:5px;margin:.35rem 0;color:var(--muted);font-size:.7rem;line-height:1.25}
+.film-genres span{padding:.25rem .4rem;border:1px solid var(--line);border-radius:4px}
+.genre-logo-editor{display:grid;gap:.7rem;border:1px solid var(--line);padding:.85rem;border-radius:6px}
+.genre-logo-editor small{display:block;color:var(--muted);font-size:.75rem;margin-top:.3rem}
+#titleLogoPreview:not([hidden]){width:auto!important;height:auto!important;max-width:min(100%,240px);max-height:59px;object-fit:contain!important;margin-top:.5rem}
+@media(max-width:760px){.front-copy .title-logo{max-height:90px}.front-review-copy .title-logo,.card h3 .title-logo{max-height:42px}}
 </style>
 </head><body>
 <a class="btn skip" href="#archive">Skip to films</a>
@@ -32,11 +45,11 @@
 </div></header>
 <main><section id="heroSection" class="hero shell" aria-label="Spotlight"></section>
 <section id="archive" class="archive shell" aria-labelledby="archiveHeading">
-<div class="section-head"><div><div class="kicker">The collection</div><h2 id="archiveHeading">The film archive</h2><p>Find a film by title, mood, language, or verdict.</p></div><span id="archiveCount" class="count" aria-live="polite"></span></div>
+<div class="section-head"><div><div class="kicker">The collection</div><h2 id="archiveHeading">The film archive</h2><p>Find a film by title, genre, language, or verdict.</p></div><span id="archiveCount" class="count" aria-live="polite"></span></div>
 <div class="toolbar">
 <input id="searchInput" type="search" placeholder="Search films, cast, or directors…" aria-label="Search films, cast, or directors">
 <select id="langFilter" aria-label="Language"></select>
-<select id="moodFilter" aria-label="Mood"></select>
+<select id="moodFilter" aria-label="Genre or mood"></select>
 <select id="tierFilter" aria-label="Verdict stamp"><option value="all">All stamps</option><option value="Certified Banger">Certified banger</option><option value="Locked in The Vault">Locked in the vault</option><option value="One-Time Watch">One time watch</option><option value="Skip">Avoid</option></select>
 </div>
 <div class="tabs" role="tablist" aria-label="Entry type"><button id="tab-all" role="tab" aria-selected="true" aria-controls="moviesGrid" onclick="setTypeFilter('all')">All films</button><button id="tab-Review" role="tab" aria-selected="false" aria-controls="moviesGrid" onclick="setTypeFilter('Review')">Reviews</button><button id="tab-Recommendation" role="tab" aria-selected="false" aria-controls="moviesGrid" onclick="setTypeFilter('Recommendation')">Weekend picks</button></div>
@@ -135,7 +148,7 @@
             </select>
           </div>
           <div class="col-span-2 sm:col-span-1">
-            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1" for="f_mood">Mood / Genre *</label>
+            <label class="block text-[11px] font-bold uppercase text-vault-muted mb-1" for="f_mood">Editorial mood</label>
             <select id="f_mood" class="w-full bg-zinc-900 border border-white/15 rounded-xl px-3 py-2 text-xs sm:text-sm text-vault-cream">
               <option value="Investigative Thriller">Investigative Thriller</option>
               <option value="Comfort & Comedy">Comfort & Comedy</option>
@@ -145,6 +158,19 @@
               <option value="Mind-Bender">Mind-Bender</option>
             </select>
           </div>
+        </div>
+
+        <div class="genre-logo-editor">
+          <div><label for="f_genres">Genres</label>
+            <input id="f_genres" type="text" placeholder="e.g., Mystery, Thriller, Comedy" maxlength="450" aria-describedby="genreHint">
+            <small id="genreHint">Filled from TMDB when you select a film. You can add or edit any genre, separated by commas.</small>
+          </div>
+          <div><label for="f_titleLogo">Movie title logo URL</label>
+            <input id="f_titleLogo" type="url" placeholder="Filled from TMDB when available" maxlength="1200" aria-describedby="logoHint">
+            <small id="logoHint">Use a direct HTTPS image link, or leave this blank for plain title text.</small>
+            <img id="titleLogoPreview" alt="Movie title logo preview" hidden>
+          </div>
+          <small id="filmMetadataStatus" role="status" aria-live="polite"></small>
         </div>
 
         <!-- Fractional Rating (Supports 3.25, 3.75, etc.) + Live 5-Vault Sync Preview -->
@@ -517,6 +543,36 @@ function posterUrl(movie,full=false){
  const v=validPoster(original)?original:(seededPosters[movie.id]||"");
  return full?v:v.replace(/^https:\/\/image\.tmdb\.org\/t\/p\/original\//i,"https://image.tmdb.org/t/p/w780/");
 }
+function filmGenres(values){
+ const source=Array.isArray(values)?values:String(values??"").split(",");
+ const seen=new Set();
+ return source.filter(v=>typeof v==="string").map(v=>v.trim().slice(0,60)).filter(v=>{
+  const k=v.toLowerCase(); if(!k||seen.has(k))return false;
+  seen.add(k);return true;
+ }).slice(0,16);
+}
+function validTitleLogo(value){
+ const raw=String(value??"").trim();
+ if(!raw)return "";
+ try{const u=new URL(raw);return u.protocol==="https:"&&u.hostname&&!u.username&&!u.password?u.href:"";}catch{return "";}
+}
+function filmTitle(movie){
+ const url=validTitleLogo(movie.titleLogo);
+ return url?`<span class="title-text">${esc(movie.title)}</span><img class="title-logo" src="${esc(url)}" alt="" decoding="async">`:esc(movie.title);
+}
+function setTitleLogos(root){
+ root.querySelectorAll(".title-logo").forEach(img=>{
+  const show=()=>img.parentElement?.classList.toggle("title-has-logo",img.naturalWidth>0);
+  img.addEventListener("load",show);
+  img.addEventListener("error",()=>img.parentElement?.classList.remove("title-has-logo"));
+  if(img.complete)show();
+ });
+}
+function genreTags(movie,max=16){
+ const names=filmGenres(movie.genres).slice(0,max);
+ return names.length?`<div class="film-genres" aria-label="Genres">${names.map(g=>`<span>${esc(g)}</span>`).join("")}</div>`:"";
+}
+function filterGenres(movie){return [...filmGenres(movie.genres),movie.mood].filter(Boolean);}
 function poster(movie,hero=false){
  return `<img src="${esc(posterUrl(movie)||window.generateVaultFallbackPoster(movie.title,movie.year))}" alt="${esc(movie.title)} poster" data-movie="${esc(movie.id)}" data-title="${esc(movie.title)}" data-year="${esc(movie.year)}" loading="${hero?"eager":"lazy"}" decoding="async"${hero?' fetchpriority="high"':""}>`;
 }
@@ -544,7 +600,7 @@ function renderSpotlight(movies){
  const latest=movies.find(m=>m.type==="Review"&&m.featured)||movies.find(m=>m.type==="Review");
  const feature=chosen||movies.find(m=>m.featured)||movies[0];
  const hero=$("heroSection");
- const key=JSON.stringify([feature,latest].map(m=>m?[m.id,m.title,m.year,m.director,m.language,m.mood,m.type,m.verdict,m.rating,m.tier,posterUrl(m)]:null));
+ const key=JSON.stringify([feature,latest].map(m=>m?[m.id,m.title,m.year,m.director,m.language,m.mood,m.type,m.verdict,m.rating,m.tier,posterUrl(m),m.titleLogo,m.genres]:null));
  if(!feature){hero.innerHTML="";hero.hidden=true;spotlightKey="";return;}
  if(key===spotlightKey)return;
  hero.hidden=false;spotlightKey=key;
@@ -552,14 +608,16 @@ function renderSpotlight(movies){
  hero.innerHTML=`<div class="edition-line"><p class="kicker"><span class="edition-dot" aria-hidden="true"></span> Independent film journal</p><a href="#archive">Browse the archive <span aria-hidden="true">↓</span></a></div>
  <div class="front-grid"><article class="front-feature">
  <div class="front-copy"><p class="kicker">${isKnives?"Weekend Vault Pick":feature.type==="Recommendation"?"Weekend pick":"In the spotlight"}</p>
- <h1>${esc(feature.title)}</h1>
+ <h1>${filmTitle(feature)}</h1>
  <p class="front-meta">${[feature.year,feature.director,feature.mood].filter(Boolean).map(esc).join(" · ")}</p>
+ ${genreTags(feature,3)}
  <p class="front-lead">${isKnives?"A mystery novelist turns up dead. His family has a lot to say and even more to hide. Pick a suspect early. See how long you stick with them.":esc(feature.verdict||feature.synopsis||"")}</p>
  ${isRated(feature)?`<div class="score-row">${ratingHTML(feature.rating)} ${stamp(feature.tier)}</div>`:""}
  <div class="front-actions"><button class="btn" data-open-movie="${esc(feature.id)}">${feature.type==="Recommendation"?"Why it’s worth watching":"Read the review"} <span aria-hidden="true">↗</span></button></div></div>
  <div class="front-art">${poster(feature,true)}</div></article>
- ${latest&&latest!==feature?`<article class="front-review"><div class="front-review-art">${poster(latest)}</div><div class="front-review-copy"><p class="kicker">Review Friday</p><h2>${esc(latest.title)}</h2><p class="front-review-dek">${latest.id==="scene-2026"?"Scene takes half a movie to get going. Then Naslen steals it.":esc(latest.verdict||"")}</p><div class="score-row">${isRated(latest)?ratingHTML(latest.rating):""} ${stamp(latest.tier)}</div>${editorialLink(latest,"Read the review")}</div></article>`:""}
+ ${latest&&latest!==feature?`<article class="front-review"><div class="front-review-art">${poster(latest)}</div><div class="front-review-copy"><p class="kicker">Review Friday</p><h2>${filmTitle(latest)}</h2><p class="front-review-dek">${latest.id==="scene-2026"?"Scene takes half a movie to get going. Then Naslen steals it.":esc(latest.verdict||"")}</p><div class="score-row">${isRated(latest)?ratingHTML(latest.rating):""} ${stamp(latest.tier)}</div>${editorialLink(latest,"Read the review")}</div></article>`:""}
  </div>`;
+ setTitleLogos(hero);
  const reviewImage=hero.querySelector(".front-review-art img");
  if(reviewImage){
    const setReviewBackdrop=()=>{
@@ -575,14 +633,15 @@ function renderSpotlight(movies){
 window.renderMovies=function(){
  const movies=window.movies;
  selectOptions("langFilter",movies.map(m=>m.language),"All languages");
- selectOptions("moodFilter",movies.map(m=>m.mood),"All moods");
+ selectOptions("moodFilter",movies.flatMap(filterGenres),"All genres & moods");
  const search=$("searchInput").value.trim().toLowerCase();
  const lang=$("langFilter").value,mood=$("moodFilter").value,tier=$("tierFilter").value,type=window.currentTypeFilter;
- const filtered=movies.filter(m=>(type==="all"||m.type===type)&&(lang==="all"||m.language===lang)&&(mood==="all"||m.mood===mood)&&(tier==="all"||stampKey(m.tier)===tier)&&(!search||[m.title,m.year,m.cast,m.director,m.mood,m.language].some(x=>String(x??"").toLowerCase().includes(search))));
+ const filtered=movies.filter(m=>(type==="all"||m.type===type)&&(lang==="all"||m.language===lang)&&(mood==="all"||filterGenres(m).includes(mood))&&(tier==="all"||stampKey(m.tier)===tier)&&(!search||[m.title,m.year,m.cast,m.director,m.language,...filterGenres(m)].some(x=>String(x??"").toLowerCase().includes(search))));
  renderSpotlight(movies);
  $("archiveCount").textContent=`${filtered.length} ${filtered.length===1?"film":"films"}`;
  $("emptyState").classList.toggle("hidden",!!filtered.length);
- $("moviesGrid").innerHTML=filtered.map(m=>`<article class="card"><div class="card-art">${poster(m)}<span class="card-kind">${m.type==="Recommendation"?"Weekend pick":"Review"}</span></div><div class="card-body"><div class="card-meta">${[m.year,m.language].filter(Boolean).map(esc).join(" · ")}</div><h3>${esc(m.title)}</h3><p>${esc(m.verdict||m.synopsis||"")}</p><div class="card-bottom">${isRated(m)?ratingHTML(m.rating):'<span class="card-meta">Unrated recommendation</span>'}</div><div>${stamp(m.tier)}</div><button data-open-movie="${esc(m.id)}" aria-label="Open ${esc(m.title)}">Open ${m.type==="Recommendation"?"pick":"review"} <span aria-hidden="true">↗</span></button></div></article>`).join("");
+ $("moviesGrid").innerHTML=filtered.map(m=>`<article class="card"><div class="card-art">${poster(m)}<span class="card-kind">${m.type==="Recommendation"?"Weekend pick":"Review"}</span></div><div class="card-body"><div class="card-meta">${[m.year,m.language].filter(Boolean).map(esc).join(" · ")}</div><h3>${filmTitle(m)}</h3>${genreTags(m,3)}<p>${esc(m.verdict||m.synopsis||"")}</p><div class="card-bottom">${isRated(m)?ratingHTML(m.rating):'<span class="card-meta">Unrated recommendation</span>'}</div><div>${stamp(m.tier)}</div><button data-open-movie="${esc(m.id)}" aria-label="Open ${esc(m.title)}">Open ${m.type==="Recommendation"?"pick":"review"} <span aria-hidden="true">↗</span></button></div></article>`).join("");
+ setTitleLogos($("moviesGrid"));
 };
 window.setTypeFilter=type=>{
  window.currentTypeFilter=type;
@@ -615,7 +674,7 @@ window.openDetailModal=function(id){
  const s=getViewerStats(m),v=s.userVote??(s.count?s.avg:window.normalizeRating(m.rating));
  const stepVal=Math.max(.5,Math.min(5,Math.round(v*4)/4));
  const share="https://x.com/intent/tweet?text="+encodeURIComponent(`${m.title} (${m.year}) · ${isRated(m)?window.formatVaultScore(m.rating)+"/5 · ":""}via @TheVaultCertify https://thevault.rest/?film=${encodeURIComponent(id)}`);
- sheet.innerHTML=`<div class="sheet-head">${poster(m)}<div><div class="kicker">${m.type==="Recommendation"?"Weekend pick":"The Vault review"}</div><h2 id="detailTitle">${esc(m.title)}</h2><p>${[m.year,m.language,m.director].filter(Boolean).map(esc).join(" · ")}</p><div class="score-row">${isRated(m)?ratingHTML(m.rating):""} ${stamp(m.tier)}</div></div><button class="btn secondary sheet-close" data-close-review aria-label="Close review">×</button></div><div class="sheet-body">
+ sheet.innerHTML=`<div class="sheet-head">${poster(m)}<div><div class="kicker">${m.type==="Recommendation"?"Weekend pick":"The Vault review"}</div><h2 id="detailTitle">${filmTitle(m)}</h2><p>${[m.year,m.language,m.director].filter(Boolean).map(esc).join(" · ")}</p>${genreTags(m)}<div class="score-row">${isRated(m)?ratingHTML(m.rating):""} ${stamp(m.tier)}</div></div><button class="btn secondary sheet-close" data-close-review aria-label="Close review">×</button></div><div class="sheet-body">
  ${m.verdict?`<section class="review-panel"><div class="kicker">The verdict</div><h3>${esc(m.verdict)}</h3></section>`:""}
  ${m.review?`<section><h3>${m.type==="Recommendation"?"Why watch it":"Full review"}</h3><p class="review-text">${esc(m.review)}</p></section>`:""}
  ${m.synopsis?`<details class="note"><summary>Synopsis</summary><p>${esc(m.synopsis)}</p></details>`:""}
@@ -624,6 +683,7 @@ window.openDetailModal=function(id){
  ${m.spoilers?`<details class="note" data-spoiler ${spoiler&&already?"open":""}><summary>Spoilers</summary><p class="review-text">${esc(m.spoilers)}</p></details>`:""}
  <section class="vote note"><div class="kicker">Reader ratings</div><p>${s.count?`Average ${esc(s.avgFormatted)} / 5 · ${s.count} ratings`:"No reader ratings yet"}${s.userVote!==null?` · Your rating ${window.formatVaultScore(s.userVote)} / 5`:""}</p><label for="audienceSlider">Your rating</label><output id="voteLabel" for="audienceSlider">${window.formatVaultScore(stepVal)} / 5</output><input id="audienceSlider" type="range" min="0.5" max="5" step="0.25" value="${stepVal}"><div class="quick-votes"><button class="btn" data-save-vote>Save rating</button>${[1,2,3,4,5].map(n=>`<button class="btn secondary" data-quick-vote="${n}" aria-label="Rate ${n} out of 5">${n} ★</button>`).join("")}</div></section>
  <div class="sheet-actions"><a class="btn secondary" target="_blank" rel="noopener noreferrer" href="${esc(share)}">Share on X ↗</a>${posterUrl(m,true).startsWith("https://")?`<a class="btn secondary" target="_blank" rel="noopener noreferrer" href="${esc(posterUrl(m,true))}">Original poster ↗</a>`:""}${window.isAdmin?'<button class="btn secondary" data-edit>Edit</button><button class="btn secondary" data-delete>Delete</button>':""}</div></div>`;
+ setTitleLogos(sheet);
  modal.classList.remove("hidden");document.body.style.overflow="hidden";
  if(!already){sheet.scrollTop=0;sheet.querySelector("[data-close-review]").focus();}
  else{sheet.scrollTop=scroll;if(active?.id)$ (active.id)?.focus({preventScroll:true});else if(active?.hasAttribute("data-save-vote"))sheet.querySelector("[data-save-vote]")?.focus({preventScroll:true});}
@@ -703,28 +763,71 @@ window.previewPosterInput=()=>{
  img.onload=()=>{if(run===imageRun){preview.src=url;status.textContent=resolutionMessage(img.naturalWidth,img.naturalHeight);}};
  img.onerror=()=>{if(run===imageRun){preview.src=window.generateVaultFallbackPoster(title,year);status.textContent="This image could not be loaded. Try a direct image link.";}};img.src=url;
 };
+const logoInput=$("f_titleLogo"),genreInput=$("f_genres"),logoPreview=$("titleLogoPreview"),metadataStatus=$("filmMetadataStatus");
+let logoCheck=0,filmPickPending=false;
+function previewTitleLogo(){
+ const url=validTitleLogo(logoInput.value),run=++logoCheck;
+ logoPreview.hidden=true; 
+ if(!url){logoPreview.removeAttribute("src");return;}
+ const img=new Image();
+ img.onload=()=>{if(run===logoCheck){logoPreview.src=url;logoPreview.hidden=false;}};
+ img.src=url;
+}
+logoInput.addEventListener("input",previewTitleLogo);
+function chooseTitleLogo(list,language){
+ const prefs=[...new Set(["en",language,null].filter(x=>x!==undefined))];
+ const score=l=>{const n=prefs.indexOf(l.iso_639_1||null);return n===-1?99:n;};
+ return (Array.isArray(list)?list:[]).filter(l=>l&&/\.(png|svg|webp)$/i.test(l.file_path||"")&&tmdbPoster(l.file_path))
+  .sort((a,b)=>score(a)-score(b)||(b.vote_count||0)-(a.vote_count||0)||(b.width||0)-(a.width||0))[0];
+}
+window.filmMetadataForSave=()=>({
+ pending:filmPickPending,
+ genres:filmGenres(genreInput.value),
+ titleLogo:validTitleLogo(logoInput.value),
+ invalidLogo:!!logoInput.value.trim()&&!validTitleLogo(logoInput.value)
+});
 window.selectGraspedMovie=async idx=>{
  const item=window.grasperCacheResults[idx];if(!item)return;
- const run=++pickRun, old=$("f_poster").value;
+ const filmId=Number(item.id);
+ if(!Number.isSafeInteger(filmId)||filmId<=0)return;
+ const run=++pickRun, oldPoster=posterInput.value, oldGenres=genreInput.value, oldLogo=logoInput.value;
  const put=(field,value)=>{if(value&&!$(field).value)$(field).value=value;};
- put("f_title",item.title);put("f_year",item.release_date?.slice(0,4));put("f_synopsis",item.overview);
- status.textContent="Checking the available original posters…";
- const imgPromise=tmdb(`movie/${Number(item.id)}/images`,{include_image_language:[...new Set([item.original_language,"en","null"].filter(Boolean))].join(",")}).catch(()=>null);
- const creditPromise=tmdb(`movie/${Number(item.id)}/credits`).catch(()=>null);
- const img=await imgPromise;if(run!==pickRun)return;
- const found=bestImage(img?.posters,item.original_language);
- if(posterInput.value===old){
-  const url=tmdbPoster(found?.file_path||item.poster_path);
-  if(url){posterInput.value=url;window.previewPosterInput();}
-  else status.textContent="No poster available for this match. Paste a direct image URL or upload one.";
+ if(!$("editId").value){
+  $("f_title").value=item.title||"";
+  $("f_year").value=item.release_date?.slice(0,4)||"";
  }
- const credits=await creditPromise;if(run!==pickRun)return;
- put("f_cast",credits?.cast?.slice(0,8).map(c=>c.name).join(", "));
- put("f_director",credits?.crew?.filter(c=>c.job==="Director").map(c=>c.name).join(", "));
- put("f_crew",credits?.crew?.filter(c=>["Director","Director of Photography","Original Music Composer","Editor"].includes(c.job)).slice(0,8).map(c=>`${c.job}: ${c.name}`).join(" · "));
+ put("f_synopsis",item.overview);
+ filmPickPending=true;
+ metadataStatus.textContent="Fetching genres and title logo…";
+ status.textContent="Checking the available original posters…";
+ const lang=[...new Set([item.original_language,"en","null"].filter(Boolean))].join(",");
+ try{
+  const [img,details,credits]=await Promise.all([
+   tmdb(`movie/${filmId}/images`,{include_image_language:lang}).catch(()=>null),
+   tmdb(`movie/${filmId}`).catch(()=>null),
+   tmdb(`movie/${filmId}/credits`).catch(()=>null)
+  ]);
+  if(run!==pickRun)return;
+  const names=filmGenres(details?.genres?.map(g=>g?.name)||[]);
+  const logo=tmdbPoster(chooseTitleLogo(img?.logos,item.original_language)?.file_path);
+  if(genreInput.value===oldGenres&&Array.isArray(details?.genres))genreInput.value=names.join(", ");
+  if(logoInput.value===oldLogo&&img){logoInput.value=logo;previewTitleLogo();}
+  metadataStatus.textContent=(details?names.length?"TMDB genres loaded.":"No genres listed.":"Genre lookup unavailable.")+" "+
+   (img?logo?"Title logo found.":"No title logo listed. The title will use text unless you add a logo URL.":"Title logo lookup unavailable.");
+  const found=bestImage(img?.posters,item.original_language);
+  if(posterInput.value===oldPoster){
+   const url=tmdbPoster(found?.file_path||item.poster_path);
+   if(url){posterInput.value=url;window.previewPosterInput();}
+   else if(!oldPoster)status.textContent="No poster available for this match. Paste a direct image URL or upload one.";
+   else window.previewPosterInput();
+  }
+  put("f_cast",credits?.cast?.slice(0,8).map(c=>c.name).join(", "));
+  put("f_director",credits?.crew?.filter(c=>c.job==="Director").map(c=>c.name).join(", "));
+  put("f_crew",credits?.crew?.filter(c=>["Director","Director of Photography","Original Music Composer","Editor"].includes(c.job)).slice(0,8).map(c=>`${c.job}: ${c.name}`).join(" · "));
+ }finally{if(run===pickRun)filmPickPending=false;}
 };
 let uploadRun=0;
-posterInput.addEventListener("input",()=>{uploadRun++;pickRun++;});
+posterInput.addEventListener("input",()=>{uploadRun++;});
 window.handlePosterUpload=function(event){
  const file=event.target.files?.[0];if(!file)return;
  if(!/^image\/(png|jpeg|webp|gif)$/i.test(file.type)){status.textContent="Choose a JPG, PNG, WebP, or GIF.";return;}
@@ -746,7 +849,7 @@ window.handlePosterUpload=function(event){
  img.onerror=()=>{URL.revokeObjectURL(url);if(run===uploadRun)status.textContent="That file could not be opened.";};img.src=url;
 };
 let editorFocus;
-function clearEditorAsync(){searchRun++;pickRun++;imageRun++;uploadRun++;$("grasperSearchBtn").disabled=false;$("grasperSearchBtn").textContent="Find film";}
+function clearEditorAsync(){searchRun++;pickRun++;imageRun++;uploadRun++;logoCheck++;filmPickPending=false;metadataStatus.textContent="";$("grasperSearchBtn").disabled=false;$("grasperSearchBtn").textContent="Find film";}
 window.openEditorModal=id=>{
  if(!window.isAdmin)return;
  window.closeDetailModal(); editorFocus=document.activeElement;
@@ -759,9 +862,10 @@ window.openEditorModal=id=>{
    const el=$("f_"+f);el.value=m[f]??"";
    if(el.tagName==="SELECT"&&!el.value&&m[f]){el.add(new Option(m[f],m[f]));el.value=m[f];}
   }
+  genreInput.value=filmGenres(m.genres).join(", ");logoInput.value=validTitleLogo(m.titleLogo);
   $("f_rating").value=isRated(m)?window.normalizeRating(m.rating):"";$("f_tier").value=stampKey(m.tier);$("f_featured").checked=!!m.featured;
  }
- window.updateEditorVaultPreview($("f_rating").value);window.previewPosterInput();
+ window.updateEditorVaultPreview($("f_rating").value);window.previewPosterInput();previewTitleLogo();
  $("editorModal").classList.remove("hidden");document.body.style.overflow="hidden";$("f_title").focus();
 };
 window.closeEditorModal=()=>{
@@ -1054,8 +1158,13 @@ window.restoreCachedPosters=hydrateDefaultPosters;
         return;
       }
 
+      const meta = window.filmMetadataForSave();
+      if (meta.pending) { alert("Wait for the TMDB film lookup to finish before publishing."); return; }
+      if (meta.invalidLogo) { alert("Use a direct HTTPS image link for the title logo, or leave it blank."); return; }
       const payload = {
         title: titleVal,
+        genres: meta.genres,
+        titleLogo: meta.titleLogo,
         year: yearVal,
         type: document.getElementById("f_type").value,
         language: document.getElementById("f_language").value,
