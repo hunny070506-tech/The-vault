@@ -361,7 +361,7 @@ body {font-size:16px;background:radial-gradient(ellipse 90% 30rem at 0 0,#231a14
 </main>
 <form id="vaultCommands" class="shell feature-editor" hidden>
  <h2>Vault Autopilot</h2><label>Command<input id="vaultCommand" required maxlength="500" placeholder="add trailer Film Name 2026"></label>
- <p>Use “add trailer Film Name”, “add review Film Name”, or “add poll Question | Option A | Option B”. Use natural language on browsers that support built-in AI.</p>
+ <p>Try “Find the official 4K trailer for AK 47 (2026)”, “Create a review for Knives Out”, or “Add poll Best thriller? | Knives Out | Prisoners”.</p>
  <button class="btn" type="submit">Run command</button><p id="vaultCommandStatus" role="status"></p>
 </form>
 <div id="detailModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="review-sheet" id="detailModalContent"></div></div>
@@ -2123,15 +2123,29 @@ el("pollList").addEventListener("click",event=>{
  const poll=polls.find(p=>p.id===event.target.closest("[data-poll]").dataset.poll);
  if(poll&&confirm("Publish the final vote counts for everyone?"))statusRun("pollEditorStatus",()=>publishResults(poll));
 });
-async function interpretCommand(command,status){
- const direct=command.match(/^add (trailer|review|poll)\s+(.+)$/i);
- if(direct){
-  const action=direct[1].toLowerCase(), [title,...options]=action==="poll"?split(direct[2]):[direct[2]];
-  return {action,title,options};
+function parseAutopilotCommand(command){
+ const request=command.trim().replace(/^(?:please\s+|(?:can|could|would) you\s+)+/i,"");
+ const direct=request.match(/^add (trailer|review|poll)\s+(.+)$/i);
+ const poll=request.match(/^(?:add|create|draft|make|set up)\s+(?:a\s+)?poll(?:\s+(?:asking|with the question))?\s*[:–-]?\s+(.+)$/i);
+ if(poll||direct?.[1].toLowerCase()==="poll"){
+  const [title,...options]=split(poll?.[1]||direct[2]);
+  return {action:"poll",title,options};
  }
+ const prefix=request.match(/^(?:(?:find|fetch|search(?:\s+for)?|add|draft|create|prepare|open|get|show(?:\s+me)?)\s+)?(?:(?:a|an|the|best|official|4k|2160p|youtube|trailer-room|ott|theatrical)\s+)*(trailer|review)\s+(?:(?:for|of|on)\s+)?(.+)$/i);
+ const suffix=request.match(/^(?:(?:find|fetch|search(?:\s+for)?|add|get|show(?:\s+me)?)\s+)(?:(?:the|official|4k|2160p|youtube)\s+)*(.+?)\s+(?:(?:official|4k|2160p|youtube)\s+)*(trailer)\s*[.!?]?$/i);
+ const action=(prefix?.[1]||suffix?.[2]||direct?.[1])?.toLowerCase();
+ const raw=prefix?.[2]||suffix?.[1]||direct?.[2];
+ if(!action||!raw)return null;
+ const title=raw.replace(/\s+please[.!?]?$/i,"").replace(/[?!]$/,"").trim()
+  .replace(/^(?:"(.*)"|“(.*)”|'(.*)'|‘(.*)’)$/u,(_, ...groups)=>groups.slice(0,4).find(value=>value!==undefined));
+ return {action,title,options:[]};
+}
+async function interpretCommand(command,status){
+ const parsed=parseAutopilotCommand(command);
+ if(parsed)return parsed;
  const model=window.LanguageModel;
  if(!model||await model.availability()==="unavailable"){
-  throw Error("Built-in AI is unavailable in this browser. Use add trailer Film Name, add review Film Name, or add poll Question | Option A | Option B.");
+  throw Error("Try “Find the trailer for Film Name”, “Create a review for Film Name”, or “Add poll Question | Option A | Option B”.");
  }
  status.textContent="Preparing the browser’s AI model…";
  const session=await model.create({initialPrompts:[{role:"system",content:
