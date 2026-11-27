@@ -293,12 +293,16 @@ body {font-size:16px;background:radial-gradient(ellipse 90% 30rem at 0 0,#231a14
 .preview-poster-frame img {display:block;width:auto;max-width:100%;height:auto;max-height:min(54dvh,420px);object-fit:contain}
 @media (pointer:coarse) {.search-field kbd {display:none}.search-field input{padding-right:.75rem}}
 
+.feature-editor,.poll-card{padding:1.25rem;border:1px solid var(--line);background:var(--panel);border-radius:16px;margin-bottom:1rem}
+.feature-editor{display:grid;gap:.7rem}.feature-editor label,.poll-vote label{display:block}.feature-editor input,.feature-editor textarea{display:block;width:100%;padding:.58rem;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+.feature-editor .btn,.poll-vote .btn{justify-self:start}.feature-actions{display:flex;flex-wrap:wrap;gap:.5rem;padding-block:.4rem}.poll-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:1rem}.poll-card h3{font:1.65rem var(--serif)}.poll-card p{color:var(--muted)}.poll-vote label{padding:.45rem 0}.admin-tally{margin-block:.7rem;color:var(--gold)}#managedTrailers:not(:empty){margin-bottom:1rem}#managedTrailers .title-logo{max-height:70px}.trailer-card:not(.trailer-feature) .trailer-copy{align-self:stretch;flex:1}.trailer-card:not(.trailer-feature) .trailer-poster{flex:none}.card h3{min-height:2.22em}.card .title-logo{height:2.15em}.card .film-genres{min-height:2.3em}.card p{min-height:4.56em}.home-review-grid .front-review-art{width:100%;margin:0}.home-review-grid .front-review-art img{object-fit:contain}
+@media(max-width:480px){.mast nav{gap:6px}.mast nav a{font-size:.68rem}.mast .brand span{display:none}}
 </style>
 </head><body>
 <a class="btn skip" href="#archive">Skip to films</a>
 <header class="mast"><div class="shell mast-inner">
 <a class="brand" href="#" onclick="resetFilters()"><img src="data:image/png;base64,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" alt="The Vault"><span>THE VAULT<small>FILM JOURNAL</small></span></a>
-<nav aria-label="Main navigation"><a class="nav-link" href="#archive" onclick="setTypeFilter('Review')">Reviews</a><a class="nav-link picks-link" href="#archive" onclick="setTypeFilter('Recommendation')"><span class="wide-picks">Weekend picks</span><span class="mobile-picks">Picks</span></a><a class="nav-link" href="#trailers">Trailers</a><a class="nav-link desktop" href="#stamps">Verdicts</a><a class="nav-link desktop" href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer">Follow on X ↗</a><button id="addMovieBtn" class="btn hidden" onclick="openEditorModal()">+ Add entry</button></nav>
+<nav aria-label="Main navigation"><a class="nav-link" href="#archive" onclick="setTypeFilter('Review')">Reviews</a><a class="nav-link picks-link" href="#archive" onclick="setTypeFilter('Recommendation')"><span class="wide-picks">Weekend picks</span><span class="mobile-picks">Picks</span></a><a class="nav-link" href="#trailers">Trailers</a><a class="nav-link" href="#polls">Polls</a><a class="nav-link desktop" href="#stamps">Verdicts</a><a class="nav-link desktop" href="https://x.com/TheVaultCertify" target="_blank" rel="noopener noreferrer">Follow on X ↗</a><button id="addMovieBtn" class="btn hidden" onclick="openEditorModal()">+ Add entry</button></nav>
 </div></header>
 <main><section id="heroSection" class="hero shell" aria-label="Spotlight"></section>
 <section id="archive" class="archive shell" aria-labelledby="archiveHeading">
@@ -316,7 +320,31 @@ body {font-size:16px;background:radial-gradient(ellipse 90% 30rem at 0 0,#231a14
 <section id="stamps" class="shell legend" aria-labelledby="stampHeading"><div><div class="kicker">The final verdict</div><h2 id="stampHeading">Vault stamps</h2></div><div id="stampLegend" class="legend-items"></div></section>
 <section id="trailers" class="shell trailers-page" hidden aria-labelledby="trailers-heading">
  <div class="trailers-mast"><div class="kicker">The Vault / Coming attractions</div><h1 id="trailers-heading" tabindex="-1">Trailer room</h1><p>Recent official trailers, handpicked from YouTube.</p><a class="text-btn" href="#archive">Back to the film archive ↗</a></div>
- <div id="trailer-grid" class="trailer-grid"></div>
+ <form id="trailerEditor" class="feature-editor" hidden>
+  <h2>Manage trailers</h2><input name="id" type="hidden">
+  <label>Film name or film name and year<input name="title" required maxlength="160"></label>
+  <div class="feature-actions"><button id="trailerLookup" type="button" class="btn secondary">Find trailer and logo</button></div>
+  <div id="trailerMatches" class="feature-actions"></div>
+  <label>Language<input name="language" maxlength="60"></label>
+  <label>Official YouTube trailer link<input name="video" required></label>
+  <label>Title logo URL<input name="titleLogo" type="url"></label>
+  <label>BookMyShow film link<input name="bookmyshow" type="url"></label>
+  <label>District film link<input name="district" type="url"></label>
+  <div class="feature-actions"><button class="btn">Save trailer</button><button class="btn secondary" type="reset">Clear</button></div>
+  <p id="trailerEditorStatus" role="status"></p>
+ </form>
+ <div id="managedTrailers" class="trailer-grid"></div>
+ <div id="trailer-grid" hidden class="trailer-grid"></div>
+</section>
+<section id="polls" class="shell trailers-page" hidden>
+ <div class="trailers-mast"><h1 id="polls-heading" tabindex="-1">Vault polls</h1><p>Choose one answer. Voting closes three days after each poll opens.</p></div>
+ <form id="pollEditor" class="feature-editor" hidden>
+  <h2>Create a poll</h2>
+  <label>Question<input name="question" maxlength="160" required></label>
+  <label>Answer choices, one per line<textarea name="options" rows="5" required></textarea></label>
+  <button class="btn">Publish poll</button><p id="pollEditorStatus" role="status"></p>
+ </form>
+ <div id="pollList" class="poll-grid" aria-label="Polls"><p>Loading polls…</p></div>
 </section>
 <dialog id="trailer-dialog" class="trailer-dialog" aria-labelledby="trailer-dialog-title">
  <header><h2 id="trailer-dialog-title"></h2><form method="dialog"><button class="btn secondary" aria-label="Close trailer">×</button></form></header>
@@ -326,6 +354,11 @@ body {font-size:16px;background:radial-gradient(ellipse 90% 30rem at 0 0,#231a14
  <a id="trailer-youtube" class="btn secondary" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
 </dialog>
 </main>
+<form id="vaultCommands" class="shell feature-editor" hidden>
+ <h2>Vault admin assistant</h2><label>Command<input id="vaultCommand" required placeholder="add trailer Film Name"></label>
+ <p>Use “add trailer Film Name” or “add poll Question | Option A | Option B”.</p>
+ <button class="btn">Run command</button><p id="vaultCommandStatus" role="status"></p>
+</form>
 <div id="detailModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="review-sheet" id="detailModalContent"></div></div>
   <div id="editorModal" role="dialog" aria-modal="true" aria-labelledby="editorTitle" onclick="if(event.target === this) closeEditorModal()" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
     <div class="liquid-modal rounded-t-3xl sm:rounded-3xl max-w-2xl w-full p-5 sm:p-7 max-h-[92vh] overflow-y-auto">
@@ -1388,10 +1421,13 @@ const vaultTrailers=[
 const trailerPage=$("trailers"),trailerDialog=$("trailer-dialog"),trailerPlayer=$("trailer-player");
 const watchURL=id=>"https://www.youtube.com/watch?v="+id;
 function showTrailerRoute(){
- const open=location.hash==="#trailers";
+ const open=location.hash==="#trailers", pollRoute=location.hash==="#polls";
+ $("polls").hidden=!pollRoute;
+ const pollLink=document.querySelector('.mast [href="#polls"]');
+ if(pollRoute)pollLink.setAttribute("aria-current","page");else pollLink.removeAttribute("aria-current");
  if(!open&&trailerDialog.open)trailerDialog.close();
  trailerPage.hidden=!open;
- for(const el of document.querySelectorAll("main > section:not(#trailers)"))el.classList.toggle("trailer-route-hidden",open);
+ for(const el of document.querySelectorAll("main > section:not(#trailers):not(#polls)"))el.classList.toggle("trailer-route-hidden",open||pollRoute);
  const link=document.querySelector('[href="#trailers"]');
  if(open){
   link?.setAttribute("aria-current","page");
@@ -1410,7 +1446,7 @@ function showTrailerRoute(){
    </article>`).join("");
  }else {
   link?.removeAttribute("aria-current");
-  document.querySelector(".skip").href="#archive";
+  document.querySelector(".skip").href=pollRoute?"#polls-heading":"#archive";
  }
 }
 function openVideo(id,title,movie=null){
@@ -1472,7 +1508,7 @@ window.restoreCachedPosters=hydrateDefaultPosters;
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc,
-      query, orderBy, setDoc, writeBatch
+      query, orderBy, setDoc, writeBatch, getDocFromServer, getDocsFromServer, serverTimestamp, Timestamp, updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const ADMIN_EMAIL = "hunny070506@gmail.com";
@@ -1819,6 +1855,200 @@ window.restoreCachedPosters=hydrateDefaultPosters;
     };
 
     updateAdminButtons();
+const el = id => document.getElementById(id);
+const ref = (name,id) => doc(db,name,id);
+const days = 259200000;
+let storedTrailers=[], managedTrailers=[], polls=[], watchingVotes=[], featureUser=null;
+const split = (s,sep="|") => s.split(sep).map(v=>v.trim());
+const ticket = (raw,domain) => {
+ if(!raw)return "";
+ const u=new URL(raw);
+ if(u.protocol!=="https:"||!(u.hostname===domain||u.hostname.endsWith("."+domain)))throw Error("Use an HTTPS link from "+domain);
+ return u.href;
+};
+const ticketLinks = t => {
+ const options=[["BookMyShow",t.bookmyshow,"bookmyshow.com","https://in.bookmyshow.com/"],["District",t.district,"district.in","https://www.district.in/"]];
+ return options.map(([label,raw,domain,home])=>{
+  let url="";try{url=ticket(raw,domain);}catch{}
+  return `<a class="btn secondary" href="${esc(url||home)}" target="_blank" rel="noopener noreferrer">${url?"Book on "+label:"Find tickets on "+label}</a>`;
+ }).join("");
+};
+const selectTrailer = t => {
+ const form=el("trailerEditor");
+ for(const name of ["id","title","language","video","titleLogo","bookmyshow","district"])form.elements.namedItem(name).value=t[name]||"";
+ el("trailerEditorStatus").textContent="";
+};
+function renderManagedTrailers() {
+ const defaults=vaultTrailers.map(t=>({...t,id:"seed-"+t.id,video:t.id}));
+ managedTrailers=[...storedTrailers,...defaults.filter(t=>!storedTrailers.some(s=>s.id===t.id||s.video===t.video))].filter(t=>!t.removed&&youtubeId(t.video));
+ const grid=el("managedTrailers");
+ grid.innerHTML=managedTrailers.map(t=>`<article class="trailer-card"><button class="trailer-poster" data-managed-video="${esc(t.id)}" aria-label="Play ${esc(t.title)} trailer"><img alt="" loading="lazy" src="https://i.ytimg.com/vi/${esc(youtubeId(t.video))}/hqdefault.jpg"><span class="trailer-play" aria-hidden="true">▶</span></button><div class="trailer-copy"><p class="kicker">${esc(t.language||"Trailer")}</p><h2>${filmTitle(t)}</h2><div class="feature-actions">${ticketLinks(t)}</div>${isVerifiedAdmin()?`<button class="btn secondary" data-edit-trailer="${esc(t.id)}">Edit</button> <button class="btn secondary" data-delete-trailer="${esc(t.id)}">Remove</button>`:""}</div></article>`).join("");
+ setTitleLogos(grid);
+}
+const formatDate=t=>new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Kolkata"}).format(t);
+const closeMs=p=>p.closesAt?.toMillis?.()||Infinity;
+function renderPolls() {
+ for(const stop of watchingVotes) stop();
+ watchingVotes=[];
+ const panel=el("pollList");
+ panel.innerHTML=polls.map(p=>{
+  const closed=Date.now()>=closeMs(p), result=Array.isArray(p.results)?p.results:null;
+  return `<article class="poll-card" data-poll="${esc(p.id)}"><h3>${esc(p.question)}</h3><p>${result?"Results published":closed?"Voting closed · Results pending":"Voting closes "+formatDate(closeMs(p))+" IST"}</p>
+  ${result?`<ul>${p.options.map((o,i)=>`<li>${esc(o)} — ${Number(result[i])||0} votes</li>`).join("")}</ul>`:closed?"":`<form class="poll-vote">${p.options.map((o,i)=>`<label><input type="radio" required name="choice" value="${i}"> ${esc(o)}</label>`).join("")}<button class="btn" ${featureUser?"":"disabled"}>Cast vote</button><p role="status"></p></form>`}
+  ${isVerifiedAdmin()?`<div class="admin-tally" role="status"></div>${closed&&!result?'<button class="btn" data-release-poll>Publish results</button>':""}`:""}</article>`;
+ }).join("")||"<p>No polls yet.</p>";
+ if(!isVerifiedAdmin())return;
+ for(const p of polls) {
+  const card=[...panel.children].find(c=>c.dataset.poll===p.id);
+  watchingVotes.push(onSnapshot(collection(db,"vaultPolls",p.id,"votes"),snapshot=>{
+   const counts=tally(p,snapshot);
+   card.querySelector(".admin-tally").textContent="Private tally · "+p.options.map((o,i)=>o+": "+counts[i]).join(" / ");
+  },()=>{card.querySelector(".admin-tally").textContent="Private tally unavailable. Check Firestore rules."; }));
+ }
+}
+function tally(p,snapshot) {
+ const counts=p.options.map(()=>0);
+ for(const vote of snapshot.docs){const index=vote.data().choice;if(Number.isInteger(index)&&index>=0&&index<counts.length)counts[index]++;}
+ return counts;
+}
+async function createPoll(question,options) {
+ if(!isVerifiedAdmin())throw Error("Sign in as admin first.");
+ options=options.filter(Boolean);
+ if(!question||question.length>160||options.length<2||options.length>6||new Set(options.map(v=>v.toLowerCase())).size!==options.length||options.some(v=>v.length>100)) throw Error("Use a question and 2–6 distinct options, up to 100 characters each.");
+ const clock=ref("vaultAdminClock",featureUser.uid);
+ await setDoc(clock,{now:serverTimestamp()});
+ const now=(await getDocFromServer(clock)).data().now;
+ await addDoc(collection(db,"vaultPolls"),{question,options,createdAt:now,closesAt:Timestamp.fromMillis(now.toMillis()+days)});
+}
+async function publishResults(p) {
+ if(!isVerifiedAdmin())throw Error("Sign in as admin first.");
+ if(p.results||Date.now()<closeMs(p))throw Error("Results can be published once the poll closes.");
+ const snapshot=await getDocsFromServer(collection(db,"vaultPolls",p.id,"votes"));
+ await updateDoc(ref("vaultPolls",p.id),{results:tally(p,snapshot),publishedAt:serverTimestamp()});
+}
+async function findTrailer() {
+ const field=el("trailerEditor").elements;
+ const {title,year}=titleAndYear(field.namedItem("title").value.trim());
+ if(!title)throw Error("Enter a film name and optional year first.");
+ const data=await tmdb("search/movie",{query:title,...(year?{primary_release_year:year}:{})});
+ const box=el("trailerMatches");
+ const choices=(data.results||[]).slice(0,8);
+ box.replaceChildren();
+ if(!choices.length)throw Error("No matching films found.");
+ for(const item of choices){
+  const button=document.createElement("button");
+  button.type="button";button.className="btn secondary";
+  button.textContent=item.title+" ("+(item.release_date||"").slice(0,4)+")";
+  button.addEventListener("click",()=>statusRun("trailerEditorStatus",async()=>{
+   const lang=item.original_language;
+   const [videos,images]=await Promise.all([tmdb("movie/"+item.id+"/videos",{language:lang}),tmdb("movie/"+item.id+"/images",{include_image_language:[...new Set([lang,"en","null"])].join(",")})]);
+   const local=officialVideo(videos,lang);
+   const fallback=local?.type==="Trailer"?local:officialVideo(await tmdb("movie/"+item.id+"/videos",{language:"en-US"}).catch(()=>null),lang);
+   field.namedItem("title").value=item.title;
+   field.namedItem("language").value=new Intl.DisplayNames(["en"],{type:"language"}).of(lang);
+   field.namedItem("video").value=fallback?.type==="Trailer"?watchURL(fallback.key):"";
+   field.namedItem("titleLogo").value=tmdbPoster(chooseTitleLogo(images.logos,lang)?.file_path);
+   box.replaceChildren();
+   return fallback?.type==="Trailer"?"Trailer and available logo loaded. Add ticket links, then save.":"No official trailer found. Paste its YouTube link.";
+  }));
+  box.append(button);
+ }
+ return "Choose the right film below.";
+}
+const statusRun=async(id,work)=>{
+ el(id).textContent="Working…";
+ try{el(id).textContent=(await work())||"Saved.";}
+ catch(error){el(id).textContent=error.message||"Could not save.";}
+};
+el("trailerLookup").onclick=()=>statusRun("trailerEditorStatus",findTrailer);
+el("trailerEditor").onsubmit=event=>{
+ event.preventDefault();
+ statusRun("trailerEditorStatus",async()=>{
+  if(!isVerifiedAdmin())throw Error("Sign in as admin first.");
+  const fields=new FormData(event.currentTarget);
+  const get=key=>String(fields.get(key)||"").trim();
+  const video=parseYouTube(get("video"));
+  if(!video)throw Error("Enter a valid YouTube trailer link.");
+  const title=get("title"), titleLogo=validTitleLogo(get("titleLogo"));
+  if(!title||get("titleLogo")&&!titleLogo)throw Error("Enter a title and a valid HTTPS logo URL, if available.");
+  const data={title,video,titleLogo,language:get("language"),bookmyshow:ticket(get("bookmyshow"),"bookmyshow.com"),district:ticket(get("district"),"district.in")};
+  const id=get("id");
+  if(id.startsWith("seed-"))await setDoc(ref("vaultTrailers",id),{...data,createdAt:serverTimestamp()});
+  else if(id)await updateDoc(ref("vaultTrailers",id),data);
+  else await addDoc(collection(db,"vaultTrailers"),{...data,createdAt:serverTimestamp()});
+  event.target.reset();
+ });
+};
+el("trailerEditor").addEventListener("reset",()=>{el("trailerMatches").replaceChildren();});
+el("managedTrailers").onclick=event=>{
+ const target=event.target.closest("button");
+ if(!target)return;
+ const id=target.dataset.managedVideo||target.dataset.editTrailer||target.dataset.deleteTrailer;
+ const t=managedTrailers.find(x=>x.id===id);
+ if(!t)return;
+ if(target.dataset.managedVideo)openVideo(t.video,t.title);
+ else if(isVerifiedAdmin()&&target.dataset.editTrailer){selectTrailer({...t,video:watchURL(t.video)});el("trailerEditor").scrollIntoView();}
+ else if(isVerifiedAdmin()&&target.dataset.deleteTrailer&&confirm("Remove this trailer?")) statusRun("trailerEditorStatus",()=>id.startsWith("seed-")?setDoc(ref("vaultTrailers",id),{removed:true,video:t.video,createdAt:serverTimestamp()}):deleteDoc(ref("vaultTrailers",id)));
+};
+el("pollEditor").onsubmit=event=>{
+ event.preventDefault();
+ const form=event.currentTarget, fields=new FormData(form);
+ statusRun("pollEditorStatus",async()=>{
+  await createPoll(String(fields.get("question")).trim(),String(fields.get("options")).split("\n").map(s=>s.trim()));
+  form.reset();
+ });
+};
+el("pollList").addEventListener("submit",async event=>{
+ if(!event.target.matches(".poll-vote"))return;
+ event.preventDefault();
+ const form=event.target, status=form.querySelector('[role="status"]');
+ const choice=new FormData(form).get("choice");
+ if(choice===null||!featureUser)return;
+ const button=form.querySelector("button");button.disabled=true;
+ try{
+  await setDoc(doc(db,"vaultPolls",form.closest("[data-poll]").dataset.poll,"votes",featureUser.uid),{choice:Number(choice)});
+  status.textContent="Vote recorded.";form.querySelectorAll("input").forEach(input=>input.disabled=true);
+ }catch(error){status.textContent=error.code==="permission-denied"?"Vote unavailable. This browser may have voted already, or the poll has closed.":"Vote could not be saved. Try again.";button.disabled=false;}
+});
+el("pollList").addEventListener("click",event=>{
+ if(!event.target.closest("[data-release-poll]"))return;
+ const poll=polls.find(p=>p.id===event.target.closest("[data-poll]").dataset.poll);
+ if(poll&&confirm("Publish the final vote counts for everyone?"))statusRun("pollEditorStatus",()=>publishResults(poll));
+});
+el("vaultCommands").onsubmit=event=>{
+ event.preventDefault();
+ if(!isVerifiedAdmin())return;
+ const command=el("vaultCommand").value.trim();
+ statusRun("vaultCommandStatus",async()=>{
+  if(/^add trailer\s+/i.test(command)){
+   location.hash="trailers";selectTrailer({title:command.replace(/^add trailer\s+/i,"")});
+   return findTrailer();
+  }
+  if(/^add poll\s+/i.test(command)){
+   const [question,...options]=split(command.replace(/^add poll\s+/i,""));
+   await createPoll(question,options);location.hash="polls";return "Poll published.";
+  }
+  throw Error("Try: add trailer Film Name, or add poll Question | Option A | Option B");
+ });
+};
+onAuthStateChanged(auth,user=>{
+ featureUser=user;
+ for(const id of ["trailerEditor","pollEditor","vaultCommands"])el(id).hidden=!isVerifiedAdmin();
+ renderManagedTrailers();renderPolls();
+});
+onSnapshot(query(collection(db,"vaultTrailers"),orderBy("createdAt","desc")),snapshot=>{
+ storedTrailers=snapshot.docs.map(d=>({...d.data(),id:d.id}));
+ renderManagedTrailers();
+},()=>{el("trailerEditorStatus").textContent="Trailer sync unavailable. Check Firestore rules.";});
+onSnapshot(query(collection(db,"vaultPolls"),orderBy("createdAt","desc")),snapshot=>{
+ polls=snapshot.docs.map(d=>({...d.data(),id:d.id})).filter(p=>Number.isFinite(closeMs(p))&&Array.isArray(p.options));
+ renderPolls();
+},()=>{el("pollList").textContent="Polls are unavailable.";});
+setInterval(()=>{
+ const now=Date.now();
+ if(polls.some(p=>closeMs(p)>now-30000&&closeMs(p)<=now))renderPolls();
+},30000);
+
   </script>
 
 </body></html>
