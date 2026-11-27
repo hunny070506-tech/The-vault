@@ -323,13 +323,16 @@ body {font-size:16px;background:radial-gradient(ellipse 90% 30rem at 0 0,#231a14
 <section id="trailers" class="shell trailers-page" hidden aria-labelledby="trailers-heading">
  <div class="trailers-mast"><div class="kicker">The Vault / Coming attractions</div><h1 id="trailers-heading" tabindex="-1">Trailer room</h1><p>Recent official trailers, handpicked from YouTube.</p><a class="text-btn" href="#archive">Back to the film archive ↗</a></div>
  <form id="trailerEditor" class="feature-editor" hidden>
+  <details><summary>TMDB settings</summary><label>TMDB v3 API key<input class="vault-tmdb-key" type="password" autocomplete="off"></label><button type="button" class="btn secondary vault-save-key">Save key on this browser</button></details>
   <h2>Manage trailers</h2><input name="id" type="hidden">
   <label>Film name or film name and year<input name="title" required maxlength="160"></label>
   <div class="feature-actions"><button id="trailerLookup" type="button" class="btn secondary">Find trailer and logo</button></div>
-  <div id="trailerMatches" class="feature-actions"></div>
+  <div id="trailerMatches" class="feature-actions" aria-live="polite"></div>
   <label>Language<input name="language" maxlength="60"></label>
   <label>Official YouTube trailer link<input name="video" required></label>
+  <img id="trailerLogoPreview" hidden alt="Film title logo" style="max-width:min(100%,260px);max-height:70px">
   <label>Title logo URL<input name="titleLogo" type="url"></label>
+  <div class="feature-actions"><a id="trailerOpenLink" class="btn secondary" target="_blank" rel="noopener noreferrer" hidden>Watch on YouTube ↗</a><a id="trailerSearchLink" class="btn secondary" target="_blank" rel="noopener noreferrer" hidden>Search YouTube ↗</a></div>
   <label>BookMyShow film link<input name="bookmyshow" type="url"></label>
   <label>District film link<input name="district" type="url"></label>
   <div class="feature-actions"><button class="btn">Save trailer</button><button class="btn secondary" type="reset">Clear</button></div>
@@ -357,9 +360,9 @@ body {font-size:16px;background:radial-gradient(ellipse 90% 30rem at 0 0,#231a14
 </dialog>
 </main>
 <form id="vaultCommands" class="shell feature-editor" hidden>
- <h2>Vault admin assistant</h2><label>Command<input id="vaultCommand" required placeholder="add trailer Film Name"></label>
- <p>Use “add trailer Film Name” or “add poll Question | Option A | Option B”.</p>
- <button class="btn">Run command</button><p id="vaultCommandStatus" role="status"></p>
+ <h2>Vault Autopilot</h2><label>Command<input id="vaultCommand" required maxlength="500" placeholder="add trailer Film Name 2026"></label>
+ <p>Use “add trailer Film Name”, “add review Film Name”, or “add poll Question | Option A | Option B”. Use natural language on browsers that support built-in AI.</p>
+ <button class="btn" type="submit">Run command</button><p id="vaultCommandStatus" role="status"></p>
 </form>
 <div id="detailModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="review-sheet" id="detailModalContent"></div></div>
   <div id="editorModal" role="dialog" aria-modal="true" aria-labelledby="editorTitle" onclick="if(event.target === this) closeEditorModal()" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
@@ -930,7 +933,7 @@ const seedMedia={
 const youtubeId=v=>typeof v==="string"&&/^[\w-]{11}$/.test(v)?v:"";
 const officialVideo=(data,lang)=>(
  (Array.isArray(data?.results)?data.results:[]).filter(v=>v?.official===true&&v.site==="YouTube"&&["Trailer","Teaser"].includes(v.type)&&youtubeId(v.key))
- .sort((a,b)=>(a.type!=="Trailer")-(b.type!=="Trailer")||(b.iso_639_1===lang)-(a.iso_639_1===lang)||String(b.published_at||"").localeCompare(String(a.published_at||"")))[0]
+ .sort((a,b)=>(a.type!=="Trailer")-(b.type!=="Trailer")||(Number(b.size)||0)-(Number(a.size)||0)||(b.iso_639_1===lang)-(a.iso_639_1===lang)||String(b.published_at||"").localeCompare(String(a.published_at||"")))[0]
 );
 function previewData(movie){return {...seedMedia[movie.id]|| (isVvaan(movie)?seedMedia["the-vvaan-2026"]:undefined),...movie.media};}
 function indiaProviders(data){
@@ -1198,6 +1201,24 @@ const tmdb=async(path,params={})=>{
  if(!res.ok)throw new Error(res.status===401?"TMDB rejected this key. Check that it is a valid v3 key.":"TMDB could not respond ("+res.status+").");
  return res.json();
 };
+async function filmVideos(item){
+ const languages=[...new Set([item.original_language,"en"].filter(Boolean))];
+ const requests=await Promise.allSettled(languages.map(language=>tmdb(`movie/${item.id}/videos`,{language})));
+ if(requests.every(result=>result.status==="rejected"))throw requests[0].reason;
+ return {results:requests.flatMap(result=>result.value?.results||[])};
+}
+const filmImages=item=>tmdb(`movie/${item.id}/images`,{
+ include_image_language:[...new Set([item.original_language,"en","null"].filter(Boolean))].join(",")
+});
+const videoLabel=video=>video
+ ? `Official ${video.type.toLowerCase()}${Number(video.size)>=2160?" · 4K listed by TMDB":""}. Check playback quality on YouTube.`
+ : "No official YouTube trailer or teaser listed in TMDB.";
+const languageName=code=>code ? new Intl.DisplayNames(["en"],{type:"language",fallback:"code"}).of(code) : "";
+const exactFilm=(list,title,year)=>{
+ const matches=list.filter(item=>[item.title,item.original_title].some(name=>normalized(name)===normalized(title))&&
+  (!year||item.release_date?.startsWith(year)));
+ return matches.length===1?matches[0]:null;
+};
 const tmdbPoster=path=>/^\/[\w.-]+$/.test(path||"")?"https://image.tmdb.org/t/p/original"+path:"";
 function titleAndYear(q){
  const p=q.trim().match(/^(.+?)\s+\(?(18[89]\d|19\d\d|20\d\d|21\d\d)\)?$/);
@@ -1218,10 +1239,11 @@ window.searchMovieGrasper=async()=>{
  try{
   const data=await tmdb("search/movie",{query:title,...(year?{primary_release_year:year}:{})});
   if(run!==searchRun)return;
-  const list=(data.results||[]).slice(0,10);
+  const all=data.results||[], match=exactFilm(all,title,year), list=all.slice(0,10);
   window.grasperCacheResults=list;
   el.innerHTML=list.map((item,idx)=>`<button type="button" onclick="selectGraspedMovie(${idx})">${item.poster_path?`<img src="${esc(tmdbPoster(item.poster_path).replace("/original/","/w185/"))}" alt="" loading="lazy">`:""}<span><strong>${esc(item.title)}</strong><br><span class="text-vault-muted">${esc(item.release_date?.slice(0,4)||"Year not listed")} · ${esc(item.original_language?.toUpperCase()||"TMDB")}</span></span></button>`).join("");
   if(!list.length)el.textContent="No match. Try the exact title without the year, or paste a poster URL.";
+  if(match&&list.includes(match)&&!$("editId").value)await window.selectGraspedMovie(list.indexOf(match));
  }catch(e){if(run===searchRun){el.textContent=e.name==="TimeoutError"?"Lookup timed out. Try again or paste a poster URL.":e.message;if(!storedKey())$("tmdbKeyBox").classList.remove("hidden");}}
  finally{if(run===searchRun){btn.disabled=false;btn.textContent="Find film";}}
 };
@@ -1248,7 +1270,7 @@ function previewTitleLogo(){
 }
 logoInput.addEventListener("input",previewTitleLogo);
 function chooseTitleLogo(list,language){
- const prefs=[...new Set(["en",language,null].filter(x=>x!==undefined))];
+ const prefs=[...new Set([language,"en",null].filter(x=>x!==undefined))];
  const score=l=>{const n=prefs.indexOf(l.iso_639_1||null);return n===-1?99:n;};
  return (Array.isArray(list)?list:[]).filter(l=>l&&/\.(png|svg|webp)$/i.test(l.file_path||"")&&tmdbPoster(l.file_path))
   .sort((a,b)=>score(a)-score(b)||(b.vote_count||0)-(a.vote_count||0)||(b.width||0)-(a.width||0))[0];
@@ -1286,42 +1308,52 @@ window.selectGraspedMovie=async idx=>{
  const filmId=Number(item.id);
  if(!Number.isSafeInteger(filmId)||filmId<=0)return;
  const run=++pickRun, oldPoster=posterInput.value, oldGenres=genreInput.value, oldLogo=logoInput.value,oldTrailer=trailerInput.value;
- const put=(field,value)=>{if(value&&!$(field).value)$(field).value=value;};
+ const editing=Boolean($("editId").value);
+ const fields=["f_synopsis","f_cast","f_director","f_crew"];
+ const previous=new Map(fields.map(field=>[field,$(field).value]));
+ const put=(field,value)=>{if($(field).value===previous.get(field)&&(!editing||!$(field).value))$(field).value=value||"";};
  if(!$("editId").value){
   $("f_title").value=item.title||"";
   $("f_year").value=item.release_date?.slice(0,4)||"";
+  const language=languageName(item.original_language), select=$("f_language");
+  if(language){
+   if(!Array.from(select.options).some(option=>option.value===language))select.add(new Option(language,language));
+   select.value=language;
+  }
+  adminMedia={};
+  directInput.value="";
  }
  put("f_synopsis",item.overview);
  filmPickPending=true;
  metadataStatus.textContent="Fetching genres and title logo…";
  status.textContent="Checking the available original posters…";
- const lang=[...new Set([item.original_language,"en","null"].filter(Boolean))].join(",");
  try{
   const [img,details,credits,videos,providers]=await Promise.all([
-   tmdb(`movie/${filmId}/images`,{include_image_language:lang}).catch(()=>null),
+   filmImages(item).catch(()=>null),
    tmdb(`movie/${filmId}`).catch(()=>null),
    tmdb(`movie/${filmId}/credits`).catch(()=>null),
-   tmdb(`movie/${filmId}/videos`,{include_video_language:[...new Set([item.original_language,"en"].filter(Boolean))].join(",")}).catch(()=>null),
+   filmVideos(item).catch(()=>null),
    tmdb(`movie/${filmId}/watch/providers`).catch(()=>null)
   ]);
   if(run!==pickRun)return;
   if(providers)Object.assign(adminMedia,indiaProviders(providers));
   const video=officialVideo(videos,item.original_language);
-  if(video&&trailerInput.value===oldTrailer){
-   trailerInput.value=watchURL(video.key);adminMedia.videoType=video.type.toLowerCase();
+  if(trailerInput.value===oldTrailer&&(video||!editing)){
+   trailerInput.value=video?watchURL(video.key):"";
+   adminMedia.videoType=video?.type.toLowerCase()||"";
   }
   const names=filmGenres(details?.genres?.map(g=>g?.name)||[]);
   const logo=tmdbPoster(chooseTitleLogo(img?.logos,item.original_language)?.file_path);
-  if(genreInput.value===oldGenres&&Array.isArray(details?.genres))genreInput.value=names.join(", ");
-  if(logoInput.value===oldLogo&&img){logoInput.value=logo;previewTitleLogo();}
+  if(genreInput.value===oldGenres&&(!editing||Array.isArray(details?.genres)))genreInput.value=names.join(", ");
+  if(logoInput.value===oldLogo&&(img||!editing)){logoInput.value=logo;previewTitleLogo();}
   metadataStatus.textContent=(details?names.length?"TMDB genres loaded.":"No genres listed.":"Genre lookup unavailable.")+" "+
    (img?logo?"Title logo found.":"No title logo listed. The title will use text unless you add a logo URL.":"Title logo lookup unavailable.");
-  metadataStatus.textContent+=" "+(video?"Official preview found.":"No official video found in TMDB.")+" "+(providers?"India availability checked.":"Availability lookup unavailable.");
+  metadataStatus.textContent+=" "+(videos?videoLabel(video):"Trailer lookup unavailable.")+" "+(providers?"India availability checked.":"Availability lookup unavailable.");
   const found=bestImage(img?.posters,item.original_language);
   if(posterInput.value===oldPoster){
    const url=tmdbPoster(found?.file_path||item.poster_path);
    if(url){posterInput.value=url;window.previewPosterInput();}
-   else if(!oldPoster)status.textContent="No poster available for this match. Paste a direct image URL or upload one.";
+   else if(!editing||!oldPoster){posterInput.value="";window.previewPosterInput();status.textContent="No poster available for this match. Paste a direct image URL or upload one.";}
    else window.previewPosterInput();
   }
   put("f_cast",credits?.cast?.slice(0,8).map(c=>c.name).join(", "));
@@ -1869,22 +1901,48 @@ const ticket = (raw,domain) => {
  return u.href;
 };
 const ticketLinks = t => {
- const options=[["BookMyShow",t.bookmyshow,"bookmyshow.com","https://in.bookmyshow.com/"],["District",t.district,"district.in","https://www.district.in/"]];
- return options.map(([label,raw,domain,home])=>{
+ const options=[["BookMyShow",t.bookmyshow,"bookmyshow.com"],["District",t.district,"district.in"]];
+ return options.map(([label,raw,domain])=>{
   let url="";try{url=ticket(raw,domain);}catch{}
-  return `<a class="btn secondary" href="${esc(url||home)}" target="_blank" rel="noopener noreferrer">${url?"Book on "+label:"Find tickets on "+label}</a>`;
+  return url?`<a class="btn secondary" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Book on ${label}</a>`:"";
  }).join("");
 };
+let trailerLookupRun=0, trailerBusy=false;
+const trailerForm=el("trailerEditor"), trailerFields=trailerForm.elements;
+const trailerField=name=>trailerFields.namedItem(name);
+function refreshTrailerPreview(){
+ const logo=validTitleLogo(trailerField("titleLogo").value), image=el("trailerLogoPreview");
+ image.hidden=true;
+ if(logo){
+  image.onload=()=>{image.hidden=false;};
+  image.src=logo;
+  if(image.complete&&image.naturalWidth)image.hidden=false;
+ }else image.removeAttribute("src");
+ const video=parseYouTube(trailerField("video").value), link=el("trailerOpenLink");
+ link.hidden=!video;
+ if(video)link.href=watchURL(video);else link.removeAttribute("href");
+ const query=trailerField("title").value.trim(), search=el("trailerSearchLink");
+ search.hidden=!query;
+ if(query)search.href="https://www.youtube.com/results?"+new URLSearchParams({search_query:query+" official trailer 4K"});
+ else search.removeAttribute("href");
+}
+function invalidateTrailerLookup(){
+ trailerLookupRun++;
+ trailerBusy=false;
+ el("trailerMatches").replaceChildren();
+}
 const selectTrailer = t => {
+ invalidateTrailerLookup();
  const form=el("trailerEditor");
  for(const name of ["id","title","language","video","titleLogo","bookmyshow","district"])form.elements.namedItem(name).value=t[name]||"";
  el("trailerEditorStatus").textContent="";
+ refreshTrailerPreview();
 };
 function renderManagedTrailers() {
  const defaults=vaultTrailers.map(t=>({...t,id:"seed-"+t.id,video:t.id}));
  managedTrailers=[...storedTrailers,...defaults.filter(t=>!storedTrailers.some(s=>s.id===t.id||s.video===t.video))].filter(t=>!t.removed&&youtubeId(t.video));
  const grid=el("managedTrailers");
- grid.innerHTML=managedTrailers.map(t=>`<article class="trailer-card"><button class="trailer-poster" data-managed-video="${esc(t.id)}" aria-label="Play ${esc(t.title)} trailer"><img alt="" loading="lazy" src="https://i.ytimg.com/vi/${esc(youtubeId(t.video))}/hqdefault.jpg"><span class="trailer-play" aria-hidden="true">▶</span></button><div class="trailer-copy"><p class="kicker">${esc(t.language||"Trailer")}</p><h2>${filmTitle(t)}</h2><div class="feature-actions">${ticketLinks(t)}</div>${isVerifiedAdmin()?`<button class="btn secondary" data-edit-trailer="${esc(t.id)}">Edit</button> <button class="btn secondary" data-delete-trailer="${esc(t.id)}">Remove</button>`:""}</div></article>`).join("");
+ grid.innerHTML=managedTrailers.map(t=>`<article class="trailer-card"><button class="trailer-poster" data-managed-video="${esc(t.id)}" aria-label="Play ${esc(t.title)} trailer"><img alt="" loading="lazy" src="https://i.ytimg.com/vi/${esc(youtubeId(t.video))}/hqdefault.jpg"><span class="trailer-play" aria-hidden="true">▶</span></button><div class="trailer-copy"><p class="kicker">${esc(t.language||"Trailer")}</p><h2>${filmTitle(t)}</h2><div class="feature-actions"><a class="btn secondary" href="${watchURL(youtubeId(t.video))}" target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>${ticketLinks(t)}</div>${isVerifiedAdmin()?`<button class="btn secondary" data-edit-trailer="${esc(t.id)}">Edit</button> <button class="btn secondary" data-delete-trailer="${esc(t.id)}">Remove</button>`:""}</div></article>`).join("");
  setTitleLogos(grid);
 }
 const formatDate=t=>new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Kolkata"}).format(t);
@@ -1928,45 +1986,93 @@ async function publishResults(p) {
  const snapshot=await getDocsFromServer(collection(db,"vaultPolls",p.id,"votes"));
  await updateDoc(ref("vaultPolls",p.id),{results:tally(p,snapshot),publishedAt:serverTimestamp()});
 }
-async function findTrailer() {
- const field=el("trailerEditor").elements;
- const {title,year}=titleAndYear(field.namedItem("title").value.trim());
- if(!title)throw Error("Enter a film name and optional year first.");
- const data=await tmdb("search/movie",{query:title,...(year?{primary_release_year:year}:{})});
- const box=el("trailerMatches");
- const choices=(data.results||[]).slice(0,8);
- box.replaceChildren();
- if(!choices.length)throw Error("No matching films found.");
- for(const item of choices){
-  const button=document.createElement("button");
-  button.type="button";button.className="btn secondary";
-  button.textContent=item.title+" ("+(item.release_date||"").slice(0,4)+")";
-  button.addEventListener("click",()=>statusRun("trailerEditorStatus",async()=>{
-   const lang=item.original_language;
-   const [videos,images]=await Promise.all([tmdb("movie/"+item.id+"/videos",{language:lang}),tmdb("movie/"+item.id+"/images",{include_image_language:[...new Set([lang,"en","null"])].join(",")})]);
-   const local=officialVideo(videos,lang);
-   const fallback=local?.type==="Trailer"?local:officialVideo(await tmdb("movie/"+item.id+"/videos",{language:"en-US"}).catch(()=>null),lang);
-   field.namedItem("title").value=item.title;
-   field.namedItem("language").value=new Intl.DisplayNames(["en"],{type:"language"}).of(lang);
-   field.namedItem("video").value=fallback?.type==="Trailer"?watchURL(fallback.key):"";
-   field.namedItem("titleLogo").value=tmdbPoster(chooseTitleLogo(images.logos,lang)?.file_path);
-   box.replaceChildren();
-   return fallback?.type==="Trailer"?"Trailer and available logo loaded. Add ticket links, then save.":"No official trailer found. Paste its YouTube link.";
-  }));
-  box.append(button);
+async function findTrailer(){
+ invalidateTrailerLookup();
+ const run=trailerLookupRun, status=el("trailerEditorStatus"), box=el("trailerMatches");
+ const {title,year}=titleAndYear(trailerField("title").value);
+ refreshTrailerPreview();
+ const current=()=>run===trailerLookupRun&&isVerifiedAdmin();
+ if(!title){status.textContent="Enter a film name and optional year first.";return;}
+ async function pick(item){
+  if(!current())return;
+  trailerBusy=true;
+  box.replaceChildren();
+  status.textContent="Looking up the official YouTube video and title logo…";
+  try{
+   const [videos,images]=await Promise.allSettled([filmVideos(item),filmImages(item)]);
+   if(!current())return;
+   const video=officialVideo(videos.value,item.original_language);
+   const logo=tmdbPoster(chooseTitleLogo(images.value?.logos,item.original_language)?.file_path);
+   if(!trailerField("id").value||normalized(trailerField("title").value)!==normalized(item.title)){
+    for(const field of ["bookmyshow","district"])trailerField(field).value="";
+   }
+   trailerField("title").value=item.title;
+   trailerField("language").value=languageName(item.original_language);
+   trailerField("video").value=video?watchURL(video.key):"";
+   trailerField("titleLogo").value=logo;
+   refreshTrailerPreview();
+   status.textContent=[videos.status==="fulfilled"?videoLabel(video):"Trailer lookup unavailable. Use Search YouTube to find an official upload.",
+    images.status==="rejected"?"Logo lookup unavailable.":logo?"Title logo loaded.":"No title logo listed.",
+    video?"Preview the video, then save the trailer.":""].filter(Boolean).join(" ");
+  }catch(error){if(current())status.textContent=error.message||"Could not load the film.";}
+  finally{if(current())trailerBusy=false;}
  }
- return "Choose the right film below.";
+ trailerBusy=true;
+ status.textContent="Searching TMDB…";
+ try{
+  const data=await tmdb("search/movie",{query:title,...(year?{primary_release_year:year}:{})});
+  if(!current())return;
+  const choices=data.results||[], match=exactFilm(choices,title,year);
+  if(match){await pick(match);return;}
+  if(!choices.length){status.textContent="No film match in TMDB. Try its original title or use Search YouTube.";return;}
+  for(const item of choices.slice(0,8)){
+   const button=document.createElement("button");
+   button.type="button";
+   button.className="btn secondary";
+   button.textContent=[item.title,item.release_date?.slice(0,4),languageName(item.original_language)].filter(Boolean).join(" · ");
+   button.addEventListener("click",()=>pick(item));
+   box.append(button);
+  }
+  status.textContent="Choose the correct film.";
+ }catch(error){
+  if(current()){
+   status.textContent=error.message||"Film search failed.";
+   if(!storedKey())trailerForm.querySelector("details").open=true;
+  }
+ }finally{if(current())trailerBusy=false;}
 }
 const statusRun=async(id,work)=>{
  el(id).textContent="Working…";
  try{el(id).textContent=(await work())||"Saved.";}
- catch(error){el(id).textContent=error.message||"Could not save.";}
+ catch(error){el(id).textContent=error.code==="permission-denied"?"Firebase denied this action. Check that the deployed Firestore rules grant admin access to this collection.":error.message||"Could not save.";}
 };
-el("trailerLookup").onclick=()=>statusRun("trailerEditorStatus",findTrailer);
+el("trailerLookup").onclick=findTrailer;
+trailerForm.querySelector(".vault-save-key").onclick=()=>{
+ const field=trailerForm.querySelector(".vault-tmdb-key");
+ const key=field.value.trim()||storedKey();
+ if(!key){el("trailerEditorStatus").textContent="Enter your TMDB v3 API key.";return;}
+ try{localStorage.setItem("vault_tmdb_key",key);}
+ catch{el("trailerEditorStatus").textContent="This browser blocked storage for the TMDB key.";return;}
+ field.value="";
+ trailerForm.querySelector("details").open=false;
+ if(trailerField("title").value.trim())findTrailer();
+ else el("trailerEditorStatus").textContent="TMDB key saved. Enter a film name to search.";
+};
+trailerForm.addEventListener("input",event=>{
+ if(event.target===trailerField("title")){
+  invalidateTrailerLookup();
+  el("trailerEditorStatus").textContent="";
+ }
+ refreshTrailerPreview();
+});
+trailerField("title").addEventListener("keydown",event=>{
+ if(event.key==="Enter"){event.preventDefault();findTrailer();}
+});
 el("trailerEditor").onsubmit=event=>{
  event.preventDefault();
  statusRun("trailerEditorStatus",async()=>{
   if(!isVerifiedAdmin())throw Error("Sign in as admin first.");
+  if(trailerBusy)throw Error("Wait for the film lookup to finish.");
   const fields=new FormData(event.currentTarget);
   const get=key=>String(fields.get(key)||"").trim();
   const video=parseYouTube(get("video"));
@@ -1981,7 +2087,7 @@ el("trailerEditor").onsubmit=event=>{
   event.target.reset();
  });
 };
-el("trailerEditor").addEventListener("reset",()=>{el("trailerMatches").replaceChildren();});
+trailerForm.addEventListener("reset",()=>{invalidateTrailerLookup();queueMicrotask(refreshTrailerPreview);});
 el("managedTrailers").onclick=event=>{
  const target=event.target.closest("button");
  if(!target)return;
@@ -2017,31 +2123,78 @@ el("pollList").addEventListener("click",event=>{
  const poll=polls.find(p=>p.id===event.target.closest("[data-poll]").dataset.poll);
  if(poll&&confirm("Publish the final vote counts for everyone?"))statusRun("pollEditorStatus",()=>publishResults(poll));
 });
-el("vaultCommands").onsubmit=event=>{
+async function interpretCommand(command,status){
+ const direct=command.match(/^add (trailer|review|poll)\s+(.+)$/i);
+ if(direct){
+  const action=direct[1].toLowerCase(), [title,...options]=action==="poll"?split(direct[2]):[direct[2]];
+  return {action,title,options};
+ }
+ const model=window.LanguageModel;
+ if(!model||await model.availability()==="unavailable"){
+  throw Error("Built-in AI is unavailable in this browser. Use add trailer Film Name, add review Film Name, or add poll Question | Option A | Option B.");
+ }
+ status.textContent="Preparing the browser’s AI model…";
+ const session=await model.create({initialPrompts:[{role:"system",content:
+  "Translate the admin request into a draft action. Use trailer, review, poll, or unsupported. For films keep the exact title and any year given. For polls put the question in title and the answer choices in options. Use an empty options array for films. Never make up URLs or film facts."
+ }]});
+ try{
+  const result=await session.prompt(command,{responseConstraint:{
+   type:"object",properties:{action:{enum:["trailer","review","poll","unsupported"]},
+    title:{type:"string"},options:{type:"array",items:{type:"string"}}},
+   required:["action","title","options"],additionalProperties:false
+  }});
+  return JSON.parse(result);
+ }finally{session.destroy();}
+}
+el("vaultCommands").onsubmit=async event=>{
  event.preventDefault();
- if(!isVerifiedAdmin())return;
- const command=el("vaultCommand").value.trim();
- statusRun("vaultCommandStatus",async()=>{
-  if(/^add trailer\s+/i.test(command)){
-   location.hash="trailers";selectTrailer({title:command.replace(/^add trailer\s+/i,"")});
-   return findTrailer();
-  }
-  if(/^add poll\s+/i.test(command)){
-   const [question,...options]=split(command.replace(/^add poll\s+/i,""));
-   await createPoll(question,options);location.hash="polls";return "Poll published.";
-  }
-  throw Error("Try: add trailer Film Name, or add poll Question | Option A | Option B");
- });
+ const status=el("vaultCommandStatus"), button=event.currentTarget.querySelector("button[type=submit]");
+ if(!isVerifiedAdmin()){status.textContent="Sign in as admin first.";return;}
+ button.disabled=true;
+ status.textContent="Reading command…";
+ try{
+  const command=el("vaultCommand").value.trim();
+  const {action,title,options}=await interpretCommand(command,status);
+  if(!isVerifiedAdmin())throw Error("Sign in as admin first.");
+  if(typeof title!=="string"||!title.trim()||title.length>160)throw Error("Enter a film name or poll question under 160 characters.");
+  if(action==="trailer"){
+   location.hash="trailers";
+   showTrailerRoute();
+   selectTrailer({title});
+   trailerForm.scrollIntoView({block:"start"});
+   await findTrailer();
+   status.textContent=el("trailerEditorStatus").textContent;
+  }else if(action==="review"){
+   window.openEditorModal();
+   el("grasperQuery").value=title;
+   await window.searchMovieGrasper();
+   status.textContent="Review editor opened. Check the film match and enter your review before publishing.";
+  }else if(action==="poll"){
+   if(!Array.isArray(options)||options.length<2||options.some(option=>typeof option!=="string"||!option.trim())){
+    throw Error("Enter a poll question and at least two options, separated with |.");
+   }
+   const fields=el("pollEditor").elements;
+   fields.namedItem("question").value=title;
+   fields.namedItem("options").value=options.join("\n");
+   location.hash="polls";
+   showTrailerRoute();
+   el("pollEditorStatus").textContent="Poll draft ready. Check the choices and publish when ready.";
+   el("pollEditor").scrollIntoView({block:"start"});
+   status.textContent="Poll draft opened.";
+  }else throw Error("Ask to add a trailer, review, or poll.");
+ }catch(error){status.textContent=error.message||"Could not run the command.";}
+ finally{button.disabled=false;}
 };
 onAuthStateChanged(auth,user=>{
  featureUser=user;
+ if(!isVerifiedAdmin())invalidateTrailerLookup();
  for(const id of ["trailerEditor","pollEditor","vaultCommands"])el(id).hidden=!isVerifiedAdmin();
  renderManagedTrailers();renderPolls();
 });
 onSnapshot(query(collection(db,"vaultTrailers"),orderBy("createdAt","desc")),snapshot=>{
  storedTrailers=snapshot.docs.map(d=>({...d.data(),id:d.id}));
  renderManagedTrailers();
-},()=>{el("trailerEditorStatus").textContent="Trailer sync unavailable. Check Firestore rules.";});
+},()=>{renderManagedTrailers();el("trailerEditorStatus").textContent="Trailer sync unavailable. Check Firestore rules.";});
 onSnapshot(query(collection(db,"vaultPolls"),orderBy("createdAt","desc")),snapshot=>{
  polls=snapshot.docs.map(d=>({...d.data(),id:d.id})).filter(p=>Number.isFinite(closeMs(p))&&Array.isArray(p.options));
  renderPolls();
